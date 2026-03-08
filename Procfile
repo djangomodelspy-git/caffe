@@ -1,0 +1,1 @@
+web: python manage.py migrate && python manage.py seed_cafe && gunicorn caffebilling.wsgi --log-file -

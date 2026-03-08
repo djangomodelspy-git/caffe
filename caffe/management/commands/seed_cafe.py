@@ -109,3 +109,11 @@ class Command(BaseCommand):
             f'Done! {total_cats} categories and {total_items} items added.'
         ))
         self.stdout.write('   Owner can edit prices anytime from /menu/\n')
+
+        # ── Create superuser ──
+        from django.contrib.auth.models import User
+        if not User.objects.filter(username='Sai').exists():
+            User.objects.create_superuser('admin', '', 'Sai')
+            self.stdout.write(self.style.SUCCESS('✅ Superuser created → username: admin  password: Sai'))
+        else:
+            self.stdout.write('   Superuser already exists, skipped.')

@@ -27,7 +27,7 @@ DEBUG = False
 
 ALLOWED_HOSTS = ['*']
 CSRF_TRUSTED_ORIGINS = [
-    'https://caffe-production-xxxx.up.railway.app',  # replace with your actual Railway URL
+    'https://narasimhacafe.up.railway.app',
 ]
 
 # Application definition

@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Bill {{ order.bill_no }}</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --card: #22263a;
+    --accent: #f97316;
+    --text: #f1f5f9;
+    --muted: #94a3b8;
+    --border: #2e3347;
+    --green: #22c55e;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', sans-serif;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 16px;
+  }
+
+  /* ── ACTION BUTTONS ── */
+  .actions {
+    width: 100%;
+    max-width: 380px;
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  .btn {
+    flex: 1;
+    padding: 12px;
+    border-radius: 12px;
+    border: none;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: opacity 0.15s;
+  }
+  .btn:active { opacity: 0.8; }
+
+  .btn-new  { background: var(--accent); color: #fff; }
+  .btn-print { background: var(--green); color: #fff; }
+  .btn-connect { background: var(--card); color: var(--text); border: 1px solid var(--border); font-size: 12px; flex: 0 0 auto; padding: 12px 14px; }
+  .btn-connect.connected { border-color: var(--green); color: var(--green); }
+
+  /* ── RECEIPT ── */
+  .receipt {
+    width: 100%;
+    max-width: 380px;
+    background: #fff;
+    color: #111;
+    border-radius: 12px;
+    overflow: hidden;
+    font-family: 'Courier New', monospace;
+  }
+
+  .receipt-header {
+    background: #111;
+    color: #fff;
+    text-align: center;
+    padding: 18px 12px 14px;
+  }
+  .receipt-header .cafe-name {
+    font-size: 20px;
+    font-weight: 900;
+    letter-spacing: 2px;
+    font-family: 'Segoe UI', sans-serif;
+  }
+  .receipt-header .cafe-tagline {
+    font-size: 11px;
+    color: #aaa;
+    margin-top: 2px;
+    font-family: 'Segoe UI', sans-serif;
+  }
+
+  .receipt-body {
+    padding: 14px 16px;
+  }
+
+  .receipt-meta {
+    font-size: 12px;
+    color: #444;
+    margin-bottom: 12px;
+  }
+  .receipt-meta div { margin-bottom: 2px; }
+  .receipt-meta strong { color: #111; }
+
+  .divider {
+    border: none;
+    border-top: 1px dashed #bbb;
+    margin: 10px 0;
+  }
+
+  .items-table {
+    width: 100%;
+    font-size: 13px;
+    border-collapse: collapse;
+  }
+  .items-table thead th {
+    text-align: left;
+    font-size: 11px;
+    color: #666;
+    text-transform: uppercase;
+    padding-bottom: 6px;
+    border-bottom: 1px dashed #bbb;
+  }
+  .items-table thead th:last-child { text-align: right; }
+  .items-table tbody td {
+    padding: 6px 0;
+    vertical-align: top;
+  }
+  .items-table tbody td:last-child { text-align: right; font-weight: 700; }
+  .items-table tbody tr:not(:last-child) td { border-bottom: 1px solid #f0f0f0; }
+
+  .item-qty-price { font-size: 11px; color: #777; margin-top: 2px; }
+
+  .totals {
+    font-size: 13px;
+    margin-top: 8px;
+  }
+  .totals-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 3px 0;
+    color: #555;
+  }
+  .totals-row.grand {
+    font-size: 18px;
+    font-weight: 900;
+    color: #111;
+    border-top: 2px solid #111;
+    padding-top: 8px;
+    margin-top: 4px;
+  }
+
+  .receipt-footer {
+    text-align: center;
+    padding: 14px 12px 18px;
+    font-size: 12px;
+    color: #888;
+    font-family: 'Segoe UI', sans-serif;
+    border-top: 1px dashed #bbb;
+    margin-top: 10px;
+  }
+  .receipt-footer strong { font-size: 14px; color: #333; display: block; margin-bottom: 3px; }
+
+  /* ── STATUS ── */
+  .status-bar {
+    width: 100%;
+    max-width: 380px;
+    margin-top: 12px;
+    font-size: 12px;
+    color: var(--muted);
+    text-align: center;
+    min-height: 18px;
+  }
+  .status-bar.ok { color: var(--green); }
+  .status-bar.err { color: #ef4444; }
+</style>
+</head>
+<body>
+
+<!-- ACTION BUTTONS -->
+<div class="actions">
+  <button class="btn btn-connect" id="btn-connect" onclick="connectPrinter()">🔵 Connect</button>
+  <button class="btn btn-print"   id="btn-print"   onclick="printBill()">🖨️ Print Bill</button>
+  <a class="btn btn-new" href="{% url 'order_screen' %}">+ New Order</a>
+</div>
+
+<!-- RECEIPT -->
+<div class="receipt" id="receipt">
+  <div class="receipt-header">
+    <div class="cafe-name">NARASIMHA CAFE</div>
+    <div class="cafe-tagline">Thank you for visiting!</div>
+  </div>
+  <div class="receipt-body">
+    <div class="receipt-meta">
+      <div><strong>Bill No:</strong> {{ order.bill_no }}</div>
+      <div><strong>Date:</strong> {{ order.created_at|date:"d M Y" }}</div>
+      <div><strong>Time:</strong> {{ order.created_at|date:"h:i A" }}</div>
+    </div>
+
+    <hr class="divider">
+
+    <table class="items-table">
+      <thead>
+        <tr>
+          <th>Item</th>
+          <th style="text-align:center;">Qty</th>
+          <th>Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in order.items.all %}
+        <tr>
+          <td>
+            {{ item.name }}
+            <div class="item-qty-price">₹{{ item.price }} each</div>
+          </td>
+          <td style="text-align:center;">{{ item.quantity }}</td>
+          <td>₹{{ item.total }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <hr class="divider">
+
+    <div class="totals">
+      <div class="totals-row">
+        <span>Subtotal</span>
+        <span>₹{{ order.subtotal }}</span>
+      </div>
+      {% if order.tax %}
+      <div class="totals-row">
+        <span>GST ({{ gst_percent }}%)</span>
+        <span>₹{{ order.tax }}</span>
+      </div>
+      {% endif %}
+      <div class="totals-row grand">
+        <span>TOTAL</span>
+        <span>₹{{ order.grand_total }}</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="receipt-footer">
+    <strong>Thank you! 😊</strong>
+    Visit us again
+  </div>
+</div>
+
+<div class="status-bar" id="status"></div>
+
+<script>
+/* ── Bluetooth Thermal Printer ── */
+let printerChar = null;
+
+async function connectPrinter() {
+  const btn = document.getElementById('btn-connect');
+  const status = document.getElementById('status');
+  try {
+    status.className = 'status-bar';
+    status.textContent = 'Searching for printer...';
+
+    const device = await navigator.bluetooth.requestDevice({
+      acceptAllDevices: true,
+      optionalServices: ['000018f0-0000-1000-8000-00805f9b34fb']
+    });
+    const server  = await device.gatt.connect();
+    const service = await server.getPrimaryService('000018f0-0000-1000-8000-00805f9b34fb');
+    printerChar   = await service.getCharacteristic('00002af1-0000-1000-8000-00805f9b34fb');
+
+    btn.textContent = '✅ Connected';
+    btn.classList.add('connected');
+    status.className = 'status-bar ok';
+    status.textContent = 'Printer connected! Ready to print.';
+  } catch(e) {
+    status.className = 'status-bar err';
+    status.textContent = 'Could not connect: ' + e.message;
+  }
+}
+
+async function sendToDevice(data) {
+  const chunkSize = 100;
+  for (let i = 0; i < data.length; i += chunkSize) {
+    await printerChar.writeValue(data.slice(i, i + chunkSize));
+  }
+}
+
+async function printBill() {
+  const status = document.getElementById('status');
+
+  if (!printerChar) {
+    status.className = 'status-bar err';
+    status.textContent = 'Connect printer first!';
+    return;
+  }
+
+  status.className = 'status-bar';
+  status.textContent = 'Printing...';
+
+  try {
+    // Build receipt text (58mm = 32 chars per line)
+    const W = 32;
+    const divider = '-'.repeat(W);
+
+    function center(text) {
+      const pad = Math.max(0, Math.floor((W - text.length) / 2));
+      return ' '.repeat(pad) + text;
+    }
+    function leftRight(l, r) {
+      const space = Math.max(1, W - l.length - r.length);
+      return l + ' '.repeat(space) + r;
+    }
+
+    let lines = [];
+    lines.push(center('NARASIMHA CAFE'));
+    lines.push(center('Thank you for visiting!'));
+    lines.push(divider);
+    lines.push('Bill No: {{ order.bill_no }}');
+    lines.push('Date: {{ order.created_at|date:"d M Y" }}');
+    lines.push('Time: {{ order.created_at|date:"h:i A" }}');
+    lines.push(divider);
+    lines.push(leftRight('Item', 'Amt'));
+    lines.push(divider);
+
+    {% for item in order.items.all %}
+    lines.push(leftRight('{{ item.name|escapejs }} x{{ item.quantity }}', 'Rs.{{ item.total }}'));
+    {% endfor %}
+
+    lines.push(divider);
+    lines.push(leftRight('Subtotal', 'Rs.{{ order.subtotal }}'));
+    {% if order.tax %}
+    lines.push(leftRight('Tax 5%', 'Rs.{{ order.tax }}'));
+    {% endif %}
+    lines.push(divider);
+    lines.push(leftRight('TOTAL', 'Rs.{{ order.grand_total }}'));
+    lines.push(divider);
+    lines.push(center('Thank you! Visit again'));
+    lines.push('\n\n\n');   // paper feed
+
+    const text = lines.join('\n');
+    const encoder = new TextEncoder();
+    await sendToDevice(encoder.encode(text));
+
+    status.className = 'status-bar ok';
+    status.textContent = '✅ Printed successfully!';
+  } catch(e) {
+    status.className = 'status-bar err';
+    status.textContent = 'Print failed: ' + e.message;
+  }
+}
+</script>
+</body>
+</html>

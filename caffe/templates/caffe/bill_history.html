@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bill History</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0f1117; --surface: #1a1d27; --card: #22263a;
+    --accent: #f97316; --text: #f1f5f9; --muted: #94a3b8;
+    --border: #2e3347; --green: #22c55e; --red: #ef4444;
+  }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; padding: 0 0 40px; }
+
+  .topbar {
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    padding: 12px 16px; display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 10;
+  }
+  .topbar h1 { font-size: 18px; font-weight: 700; }
+  .topbar h1 span { color: var(--accent); }
+  .back-btn { color: var(--muted); text-decoration: none; font-size: 13px; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border); }
+
+  .container { padding: 16px; max-width: 600px; margin: 0 auto; }
+
+  /* FILTERS */
+  .filter-row { display: flex; gap: 8px; margin-bottom: 16px; }
+  .date-input {
+    flex: 1; background: var(--card); border: 1px solid var(--border);
+    color: var(--text); padding: 9px 12px; border-radius: 10px; font-size: 14px; outline: none;
+  }
+  .date-input:focus { border-color: var(--accent); }
+  .btn-filter { background: var(--accent); color: #fff; border: none; padding: 9px 18px; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; }
+  .btn-today  { background: var(--card); color: var(--text); border: 1px solid var(--border); padding: 9px 14px; border-radius: 10px; font-size: 13px; cursor: pointer; }
+
+  /* SUMMARY */
+  .summary { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+  .sum-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px; text-align: center; }
+  .sum-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+  .sum-value { font-size: 18px; font-weight: 800; }
+  .sum-value.green  { color: var(--green); }
+  .sum-value.orange { color: var(--accent); }
+  .sum-value.blue   { color: #60a5fa; }
+
+  /* SEARCH */
+  .search-wrap { margin-bottom: 12px; position: relative; }
+  .search-input {
+    width: 100%; background: var(--card); border: 1px solid var(--border);
+    color: var(--text); padding: 9px 12px 9px 34px; border-radius: 10px; font-size: 14px; outline: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.099zm-5.242 1.156a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: 10px center;
+  }
+  .search-input:focus { border-color: var(--accent); }
+  .search-input::placeholder { color: var(--muted); }
+
+  /* BILL ROWS */
+  .section-title { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin: 14px 0 8px; }
+
+  .bill-row {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 12px 14px; margin-bottom: 6px;
+    display: flex; align-items: center; justify-content: space-between;
+    text-decoration: none; color: var(--text); transition: border-color 0.15s;
+  }
+  .bill-row:hover { border-color: var(--accent); }
+  .bill-left .bill-no   { font-size: 14px; font-weight: 700; }
+  .bill-left .bill-meta { font-size: 12px; color: var(--muted); margin-top: 3px; }
+  .bill-right { text-align: right; }
+  .bill-amount { font-size: 16px; font-weight: 800; color: var(--green); }
+  .bill-items  { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  .empty-msg { color: var(--muted); font-size: 14px; text-align: center; padding: 40px 0; }
+
+  /* PAGINATION */
+  .pagination { display: flex; justify-content: center; gap: 6px; margin-top: 16px; flex-wrap: wrap; }
+  .page-btn {
+    background: var(--card); border: 1px solid var(--border); color: var(--text);
+    padding: 7px 13px; border-radius: 8px; font-size: 13px; cursor: pointer; text-decoration: none;
+  }
+  .page-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 700; }
+  .page-btn:hover:not(.active) { border-color: var(--accent); }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>🧾 Bill <span>History</span></h1>
+  <a href="{% url 'order_screen' %}" class="back-btn">← Orders</a>
+</div>
+
+<div class="container">
+
+  <!-- FILTERS -->
+  <form method="GET" action="{% url 'bill_history' %}">
+    <div class="filter-row">
+      <input type="date" name="date" value="{{ filter_date }}" class="date-input">
+      <button type="submit" name="date" value="" class="btn-today">All</button>
+      <button type="submit" class="btn-filter">Filter</button>
+    </div>
+    <!-- keep search query on date filter -->
+    {% if search_query %}
+    <input type="hidden" name="q" value="{{ search_query }}">
+    {% endif %}
+  </form>
+
+  <!-- SEARCH -->
+  <div class="search-wrap">
+    <input type="text" class="search-input" id="search-box"
+      placeholder="Search bill number..." value="{{ search_query }}"
+      oninput="liveSearch(this.value)">
+  </div>
+
+  <!-- SUMMARY -->
+  <div class="summary">
+    <div class="sum-card">
+      <div class="sum-label">Bills</div>
+      <div class="sum-value orange">{{ bill_count }}</div>
+    </div>
+    <div class="sum-card">
+      <div class="sum-label">Revenue</div>
+      <div class="sum-value green">₹{{ total_revenue }}</div>
+    </div>
+    <div class="sum-card">
+      <div class="sum-label">Avg Bill</div>
+      <div class="sum-value blue">₹{{ avg_bill }}</div>
+    </div>
+  </div>
+
+  <!-- BILLS LIST -->
+  <div class="section-title">
+    {% if filter_date %}{{ filter_date }}{% else %}All Bills{% endif %}
+    — {{ bill_count }} record{{ bill_count|pluralize }}
+  </div>
+
+  <div id="bills-list">
+    {% for order in orders %}
+    <a href="{% url 'bill_view' order.id %}" class="bill-row" data-billno="{{ order.bill_no|lower }}">
+      <div class="bill-left">
+        <div class="bill-no">{{ order.bill_no }}</div>
+        <div class="bill-meta">{{ order.created_at|date:"d M Y" }} · {{ order.created_at|date:"h:i A" }}</div>
+      </div>
+      <div class="bill-right">
+        <div class="bill-amount">₹{{ order.grand_total }}</div>
+        <div class="bill-items">{{ order.items.count }} item{{ order.items.count|pluralize }}</div>
+      </div>
+    </a>
+    {% empty %}
+    <p class="empty-msg">No bills found</p>
+    {% endfor %}
+  </div>
+
+  <!-- PAGINATION -->
+  {% if orders.has_other_pages %}
+  <div class="pagination">
+    {% if orders.has_previous %}
+    <a href="?page={{ orders.previous_page_number }}{% if filter_date %}&date={{ filter_date }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}" class="page-btn">← Prev</a>
+    {% endif %}
+    {% for num in orders.paginator.page_range %}
+      {% if orders.number == num %}
+        <span class="page-btn active">{{ num }}</span>
+      {% elif num > orders.number|add:'-3' and num < orders.number|add:'3' %}
+        <a href="?page={{ num }}{% if filter_date %}&date={{ filter_date }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}" class="page-btn">{{ num }}</a>
+      {% endif %}
+    {% endfor %}
+    {% if orders.has_next %}
+    <a href="?page={{ orders.next_page_number }}{% if filter_date %}&date={{ filter_date }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}" class="page-btn">Next →</a>
+    {% endif %}
+  </div>
+  {% endif %}
+
+</div>
+
+<script>
+function liveSearch(query) {
+  const q = query.trim().toLowerCase();
+  document.querySelectorAll('.bill-row').forEach(row => {
+    const billno = row.dataset.billno || '';
+    row.style.display = (!q || billno.includes(q)) ? '' : 'none';
+  });
+}
+</script>
+</body>
+</html>

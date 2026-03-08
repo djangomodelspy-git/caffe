@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Menu Manager</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0f1117; --surface: #1a1d27; --card: #22263a;
+    --accent: #f97316; --text: #f1f5f9; --muted: #94a3b8;
+    --border: #2e3347; --red: #ef4444; --green: #22c55e;
+  }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; padding: 0 0 60px; }
+
+  .topbar {
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10;
+  }
+  .topbar h1 { font-size: 18px; font-weight: 700; }
+  .topbar h1 span { color: var(--accent); }
+  .back-btn {
+    color: var(--muted); text-decoration: none; font-size: 13px;
+    padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border);
+  }
+
+  .container { padding: 16px; max-width: 600px; margin: 0 auto; }
+
+  /* ADD ITEM CARD */
+  .add-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 16px; margin-bottom: 20px;
+  }
+  .add-card h2 { font-size: 15px; font-weight: 700; margin-bottom: 12px; color: var(--accent); }
+
+  .form-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .form-group { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 120px; }
+  .form-group label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+  .form-group input, .form-group select {
+    background: var(--card); border: 1px solid var(--border); color: var(--text);
+    padding: 9px 11px; border-radius: 8px; font-size: 14px; outline: none; width: 100%;
+  }
+  .form-group input:focus, .form-group select:focus { border-color: var(--accent); }
+
+  .btn-add {
+    background: var(--accent); color: #fff; border: none;
+    padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 700;
+    cursor: pointer; margin-top: 10px; width: 100%;
+  }
+
+  /* CATEGORY QUICK ADD */
+  .cat-row { display: flex; gap: 8px; margin-top: 10px; }
+  .cat-input {
+    flex: 1; background: var(--card); border: 1px solid var(--border);
+    color: var(--text); padding: 8px 11px; border-radius: 8px; font-size: 13px; outline: none;
+  }
+  .cat-input:focus { border-color: var(--accent); }
+  .btn-cat { background: var(--card); border: 1px solid var(--accent); color: var(--accent); padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+
+  /* ITEMS LIST */
+  .section-title { font-size: 13px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+
+  .item-row {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 12px 14px; margin-bottom: 8px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .item-info { flex: 1; }
+  .item-info .name { font-size: 15px; font-weight: 600; }
+  .item-info .meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .item-info .price { color: var(--accent); font-weight: 700; }
+
+  .unavail-badge {
+    font-size: 10px; padding: 2px 7px; border-radius: 20px;
+    background: #3a1f1f; color: var(--red); margin-left: 6px;
+  }
+
+  .item-actions { display: flex; gap: 6px; }
+  .btn-edit, .btn-del {
+    padding: 6px 10px; border-radius: 8px; border: none;
+    font-size: 12px; font-weight: 600; cursor: pointer;
+  }
+  .btn-edit { background: var(--card); color: var(--text); border: 1px solid var(--border); }
+  .btn-del  { background: #3a1f1f; color: var(--red); }
+
+  /* EDIT MODAL */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7); z-index: 100;
+    align-items: center; justify-content: center; padding: 20px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 16px; padding: 20px; width: 100%; max-width: 380px;
+  }
+  .modal h3 { font-size: 16px; font-weight: 700; margin-bottom: 14px; }
+  .modal .form-group { margin-bottom: 10px; }
+  .modal-row { display: flex; gap: 8px; margin-top: 12px; }
+  .btn-save { flex: 1; background: var(--accent); color: #fff; border: none; padding: 11px; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; }
+  .btn-cancel { flex: 1; background: var(--card); color: var(--muted); border: 1px solid var(--border); padding: 11px; border-radius: 10px; font-size: 14px; cursor: pointer; }
+  .toggle-row { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; }
+  .toggle-row label { font-size: 13px; color: var(--text); }
+
+  select option { background: #1a1d27; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>⚙️ <span>Menu</span> Manager</h1>
+  <a href="{% url 'order_screen' %}" class="back-btn">← Orders</a>
+</div>
+
+<div class="container">
+
+  <!-- ADD ITEM -->
+  <div class="add-card">
+    <h2>+ Add New Item</h2>
+    <form method="POST" action="{% url 'add_item' %}">
+      {% csrf_token %}
+      <div class="form-row">
+        <div class="form-group" style="flex:2; min-width:150px;">
+          <label>Item Name</label>
+          <input type="text" name="name" placeholder="e.g. Masala Chai" required>
+        </div>
+        <div class="form-group" style="flex:1; min-width:90px;">
+          <label>Price (₹)</label>
+          <input type="number" name="price" placeholder="0" min="0" step="0.5" required>
+        </div>
+      </div>
+      <div class="form-group" style="margin-top:8px;">
+        <label>Category</label>
+        <select name="category">
+          <option value="">-- No Category --</option>
+          {% for cat in categories %}
+          <option value="{{ cat.id }}">{{ cat.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <button type="submit" class="btn-add">Add Item</button>
+    </form>
+
+    <!-- Quick add category -->
+    <form method="POST" action="{% url 'add_category' %}">
+      {% csrf_token %}
+      <div class="cat-row">
+        <input type="text" name="name" placeholder="New category name..." class="cat-input">
+        <button type="submit" class="btn-cat">+ Category</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- ITEMS LIST -->
+  <div class="section-title">{{ items.count }} Items</div>
+
+  {% for item in items %}
+  <div class="item-row">
+    <div class="item-info">
+      <div class="name">
+        {{ item.name }}
+        {% if not item.is_available %}<span class="unavail-badge">Unavailable</span>{% endif %}
+      </div>
+      <div class="meta">
+        <span class="price">₹{{ item.price }}</span>
+        {% if item.category %} · {{ item.category.name }}{% endif %}
+      </div>
+    </div>
+    <div class="item-actions">
+      <button class="btn-edit" onclick="openEdit({{ item.id }}, '{{ item.name|escapejs }}', {{ item.price }}, {{ item.category_id|default:'null' }}, {{ item.is_available|yesno:'true,false' }})">Edit</button>
+      <form method="POST" action="{% url 'delete_item' item.id %}" onsubmit="return confirm('Delete {{ item.name|escapejs }}?')">
+        {% csrf_token %}
+        <button type="submit" class="btn-del">Del</button>
+      </form>
+    </div>
+  </div>
+  {% empty %}
+  <p style="color:var(--muted); font-size:14px; text-align:center; padding: 30px 0;">No items yet. Add your first item above!</p>
+  {% endfor %}
+
+</div>
+
+<!-- EDIT MODAL -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <h3>Edit Item</h3>
+    <form method="POST" id="edit-form">
+      {% csrf_token %}
+      <div class="form-group">
+        <label>Item Name</label>
+        <input type="text" name="name" id="edit-name" required>
+      </div>
+      <div class="form-group">
+        <label>Price (₹)</label>
+        <input type="number" name="price" id="edit-price" step="0.5" required>
+      </div>
+      <div class="form-group">
+        <label>Category</label>
+        <select name="category" id="edit-category">
+          <option value="">-- No Category --</option>
+          {% for cat in categories %}
+          <option value="{{ cat.id }}">{{ cat.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="toggle-row">
+        <label>Available on menu</label>
+        <input type="checkbox" name="is_available" id="edit-available">
+      </div>
+      <div class="modal-row">
+        <button type="button" class="btn-cancel" onclick="closeModal()">Cancel</button>
+        <button type="submit" class="btn-save">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function openEdit(id, name, price, catId, available) {
+  document.getElementById('edit-form').action = `/menu/edit/${id}/`;
+  document.getElementById('edit-name').value     = name;
+  document.getElementById('edit-price').value    = price;
+  document.getElementById('edit-available').checked = available;
+  const sel = document.getElementById('edit-category');
+  sel.value = catId !== null ? catId : '';
+  document.getElementById('modal').classList.add('open');
+}
+function closeModal() {
+  document.getElementById('modal').classList.remove('open');
+}
+document.getElementById('modal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+</script>
+</body>
+</html>

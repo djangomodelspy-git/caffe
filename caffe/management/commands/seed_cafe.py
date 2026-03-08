@@ -113,7 +113,7 @@ class Command(BaseCommand):
         # ── Create superuser ──
         from django.contrib.auth.models import User
         if not User.objects.filter(username='Sai').exists():
-            User.objects.create_superuser('admin', '', 'Sai')
+            User.objects.create_superuser('Sai', '', 'cafe@2026')
             self.stdout.write(self.style.SUCCESS('✅ Superuser created → username: admin  password: Sai'))
         else:
             self.stdout.write('   Superuser already exists, skipped.')

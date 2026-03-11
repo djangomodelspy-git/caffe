@@ -72,7 +72,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'caffebilling.wsgi.application'
 
-GST_PERCENT = 5  # Change to 5, 12, or 18 when client decides
+GST_PERCENT = 0  # Change to 5, 12, or 18 when client decides
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases

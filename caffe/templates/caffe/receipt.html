@@ -3,172 +3,126 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>Bill {{ order.bill_no }}</title>
+<title>Bill {{ order.bill_no }} – Kovur Grand</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-
   :root {
-    --bg: #0f1117;
-    --surface: #1a1d27;
-    --card: #22263a;
-    --accent: #f97316;
-    --text: #f1f5f9;
-    --muted: #94a3b8;
-    --border: #2e3347;
-    --green: #22c55e;
+    --bg: #0f1117; --surface: #1a1d27; --card: #22263a;
+    --accent: #f97316; --text: #f1f5f9; --muted: #94a3b8;
+    --border: #2e3347; --green: #22c55e; --red: #ef4444;
+  }
+  body.light {
+    --bg: #f4f6fb; --surface: #ffffff; --card: #f0f2f8;
+    --accent: #f97316; --text: #1a1d27; --muted: #6b7280;
+    --border: #d1d5db; --green: #16a34a; --red: #dc2626;
   }
 
   body {
-    background: var(--bg);
-    color: var(--text);
+    background: var(--bg); color: var(--text);
     font-family: 'Segoe UI', sans-serif;
-    min-height: 100dvh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 16px;
+    min-height: 100dvh; display: flex;
+    flex-direction: column; align-items: center; padding: 16px;
+    transition: background 0.2s, color 0.2s;
   }
 
-  /* ── ACTION BUTTONS ── */
   .actions {
-    width: 100%;
-    max-width: 380px;
-    display: flex;
-    gap: 8px;
-    margin-bottom: 16px;
+    width: 100%; max-width: 380px;
+    display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap;
   }
-
   .btn {
-    flex: 1;
-    padding: 12px;
-    border-radius: 12px;
-    border: none;
-    font-size: 14px;
-    font-weight: 700;
-    cursor: pointer;
-    -webkit-tap-highlight-color: transparent;
-    transition: opacity 0.15s;
+    flex: 1; padding: 11px; border-radius: 12px; border: none;
+    font-size: 13px; font-weight: 700; cursor: pointer;
+    -webkit-tap-highlight-color: transparent; transition: opacity 0.15s;
+    text-decoration: none; text-align: center; display: flex;
+    align-items: center; justify-content: center;
   }
   .btn:active { opacity: 0.8; }
-
-  .btn-new  { background: var(--accent); color: #fff; }
-  .btn-print { background: var(--green); color: #fff; }
-  .btn-connect { background: var(--card); color: var(--text); border: 1px solid var(--border); font-size: 12px; flex: 0 0 auto; padding: 12px 14px; }
+  .btn-new      { background: var(--accent); color: #fff; }
+  .btn-history  { background: var(--card); color: var(--text); border: 1px solid var(--border); }
+  .btn-print    { background: var(--green); color: #fff; }
+  .btn-connect  { background: var(--card); color: var(--text); border: 1px solid var(--border); font-size: 12px; flex: 0 0 auto; padding: 11px 14px; }
   .btn-connect.connected { border-color: var(--green); color: var(--green); }
+
+  .theme-toggle {
+    background: var(--card); border: 1px solid var(--border);
+    color: var(--text); padding: 11px 12px; border-radius: 12px;
+    font-size: 12px; font-weight: 600; cursor: pointer;
+    flex: 0 0 auto;
+  }
+  .theme-toggle:hover { border-color: var(--accent); }
+
+  /* ── PAYMENT SECTION ── */
+  .payment-section {
+    width: 100%; max-width: 380px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 16px; margin-bottom: 16px;
+  }
+  .payment-title {
+    font-size: 13px; font-weight: 700; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; text-align: center;
+  }
+  .payment-btns { display: flex; gap: 10px; }
+  .btn-cash, .btn-qr {
+    flex: 1; padding: 14px; border-radius: 12px; border: 2px solid var(--border);
+    background: var(--card); color: var(--text);
+    font-size: 16px; font-weight: 700; cursor: pointer;
+    transition: all 0.15s; text-align: center;
+  }
+  .btn-cash:hover, .btn-cash.selected { border-color: var(--green); background: rgba(34,197,94,0.1); color: var(--green); }
+  .btn-qr:hover,   .btn-qr.selected   { border-color: #8b5cf6; background: rgba(139,92,246,0.1); color: #a78bfa; }
+  .payment-status { text-align: center; margin-top: 10px; font-size: 13px; font-weight: 700; min-height: 20px; }
+  .payment-status.cash { color: var(--green); }
+  .payment-status.qr   { color: #a78bfa; }
+
+  /* ── QR MODAL ── */
+  .qr-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.85); z-index: 100;
+    align-items: center; justify-content: center; padding: 20px;
+  }
+  .qr-overlay.open { display: flex; }
+  .qr-box { background: #fff; border-radius: 20px; padding: 24px; text-align: center; max-width: 300px; width: 100%; }
+  .qr-box h3 { font-size: 18px; font-weight: 800; color: #111; margin-bottom: 4px; }
+  .qr-box p  { font-size: 13px; color: #666; margin-bottom: 16px; }
+  .qr-box img { width: 220px; height: 220px; object-fit: contain; border-radius: 12px; }
+  .qr-amount { font-size: 24px; font-weight: 900; color: #5f259f; margin: 12px 0 4px; }
+  .qr-amount span { font-size: 14px; color: #888; font-weight: 400; }
+  .btn-qr-done { margin-top: 14px; width: 100%; background: #5f259f; color: #fff; border: none; padding: 13px; border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; }
+  .btn-qr-close { margin-top: 8px; width: 100%; background: #f0f0f0; color: #444; border: none; padding: 10px; border-radius: 12px; font-size: 13px; cursor: pointer; }
 
   /* ── RECEIPT ── */
   .receipt {
-    width: 100%;
-    max-width: 380px;
-    background: #fff;
-    color: #111;
-    border-radius: 12px;
-    overflow: hidden;
-    font-family: 'Courier New', monospace;
+    width: 100%; max-width: 380px; background: #fff; color: #111;
+    border-radius: 12px; overflow: hidden; font-family: 'Courier New', monospace;
   }
-
-  .receipt-header {
-    background: #111;
-    color: #fff;
-    text-align: center;
-    padding: 18px 12px 14px;
-  }
-  .receipt-header .cafe-name {
-    font-size: 20px;
-    font-weight: 900;
-    letter-spacing: 2px;
-    font-family: 'Segoe UI', sans-serif;
-  }
-  .receipt-header .cafe-tagline {
-    font-size: 11px;
-    color: #aaa;
-    margin-top: 2px;
-    font-family: 'Segoe UI', sans-serif;
-  }
-
-  .receipt-body {
-    padding: 14px 16px;
-  }
-
-  .receipt-meta {
-    font-size: 12px;
-    color: #444;
-    margin-bottom: 12px;
-  }
+  .receipt-header { background: #111; color: #fff; text-align: center; padding: 18px 12px 14px; }
+  .receipt-header .cafe-name { font-size: 20px; font-weight: 900; letter-spacing: 2px; font-family: 'Segoe UI', sans-serif; }
+  .receipt-header .cafe-tagline { font-size: 11px; color: #aaa; margin-top: 2px; font-family: 'Segoe UI', sans-serif; }
+  .receipt-body { padding: 14px 16px; }
+  .receipt-meta { font-size: 12px; color: #444; margin-bottom: 12px; }
   .receipt-meta div { margin-bottom: 2px; }
   .receipt-meta strong { color: #111; }
-
-  .divider {
-    border: none;
-    border-top: 1px dashed #bbb;
-    margin: 10px 0;
-  }
-
-  .items-table {
-    width: 100%;
-    font-size: 13px;
-    border-collapse: collapse;
-  }
-  .items-table thead th {
-    text-align: left;
-    font-size: 11px;
-    color: #666;
-    text-transform: uppercase;
-    padding-bottom: 6px;
-    border-bottom: 1px dashed #bbb;
-  }
+  .divider { border: none; border-top: 1px dashed #bbb; margin: 10px 0; }
+  .items-table { width: 100%; font-size: 13px; border-collapse: collapse; }
+  .items-table thead th { text-align: left; font-size: 11px; color: #666; text-transform: uppercase; padding-bottom: 6px; border-bottom: 1px dashed #bbb; }
   .items-table thead th:last-child { text-align: right; }
-  .items-table tbody td {
-    padding: 6px 0;
-    vertical-align: top;
-  }
+  .items-table tbody td { padding: 6px 0; vertical-align: top; }
   .items-table tbody td:last-child { text-align: right; font-weight: 700; }
   .items-table tbody tr:not(:last-child) td { border-bottom: 1px solid #f0f0f0; }
-
   .item-qty-price { font-size: 11px; color: #777; margin-top: 2px; }
-
-  .totals {
-    font-size: 13px;
-    margin-top: 8px;
-  }
-  .totals-row {
-    display: flex;
-    justify-content: space-between;
-    padding: 3px 0;
-    color: #555;
-  }
-  .totals-row.grand {
-    font-size: 18px;
-    font-weight: 900;
-    color: #111;
-    border-top: 2px solid #111;
-    padding-top: 8px;
-    margin-top: 4px;
-  }
-
-  .receipt-footer {
-    text-align: center;
-    padding: 14px 12px 18px;
-    font-size: 12px;
-    color: #888;
-    font-family: 'Segoe UI', sans-serif;
-    border-top: 1px dashed #bbb;
-    margin-top: 10px;
-  }
+  .totals { font-size: 13px; margin-top: 8px; }
+  .totals-row { display: flex; justify-content: space-between; padding: 3px 0; color: #555; }
+  .totals-row.grand { font-size: 18px; font-weight: 900; color: #111; border-top: 2px solid #111; padding-top: 8px; margin-top: 4px; }
+  .payment-tag { display: inline-block; margin-top: 8px; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; }
+  .payment-tag.cash { background: #dcfce7; color: #166534; }
+  .payment-tag.qr   { background: #ede9fe; color: #5f259f; }
+  .payment-tag.pending { background: #fef9c3; color: #854d0e; }
+  .receipt-footer { text-align: center; padding: 14px 12px 18px; font-size: 12px; color: #888; font-family: 'Segoe UI', sans-serif; border-top: 1px dashed #bbb; margin-top: 10px; }
   .receipt-footer strong { font-size: 14px; color: #333; display: block; margin-bottom: 3px; }
 
-  /* ── STATUS ── */
-  .status-bar {
-    width: 100%;
-    max-width: 380px;
-    margin-top: 12px;
-    font-size: 12px;
-    color: var(--muted);
-    text-align: center;
-    min-height: 18px;
-  }
-  .status-bar.ok { color: var(--green); }
-  .status-bar.err { color: #ef4444; }
+  .status-bar { width: 100%; max-width: 380px; margin-top: 12px; font-size: 12px; color: var(--muted); text-align: center; min-height: 18px; }
+  .status-bar.ok  { color: var(--green); }
+  .status-bar.err { color: var(--red); }
 </style>
 </head>
 <body>
@@ -176,21 +130,57 @@
 <!-- ACTION BUTTONS -->
 <div class="actions">
   <button class="btn btn-connect" id="btn-connect" onclick="connectPrinter()">🔵 Connect</button>
-  <button class="btn btn-print"   id="btn-print"   onclick="printBill()">🖨️ Print Bill</button>
-  <a class="btn btn-new" href="{% url 'order_screen' %}">+ New Order</a>
+  <button class="btn btn-print" onclick="printBill()">🖨️ Print</button>
+  <a class="btn btn-new" href="{% url 'order_screen' %}">+ New</a>
+  <a class="btn btn-history" href="{% url 'bill_history' %}">📋 Bills</a>
+  <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn">☀️</button>
 </div>
+
+<!-- PAYMENT SECTION -->
+{% if order.payment_method == 'pending' %}
+<div class="payment-section">
+  <div class="payment-title">💳 Select Payment Method</div>
+  <div class="payment-btns">
+    <button class="btn-cash" id="btn-cash" onclick="selectPayment('cash')">💵 Cash</button>
+    <button class="btn-qr"  id="btn-qr"  onclick="selectPayment('qr')">📱 QR Pay</button>
+  </div>
+  <div class="payment-status" id="pay-status"></div>
+</div>
+{% else %}
+<div class="payment-section" style="text-align:center;">
+  <div class="payment-title">Payment Received</div>
+  {% if order.payment_method == 'cash' %}
+    <span style="font-size:28px;">💵</span>
+    <div style="font-size:16px; font-weight:800; color:var(--green); margin-top:6px;">Cash Payment</div>
+  {% else %}
+    <span style="font-size:28px;">📱</span>
+    <div style="font-size:16px; font-weight:800; color:#a78bfa; margin-top:6px;">QR / PhonePe</div>
+  {% endif %}
+</div>
+{% endif %}
 
 <!-- RECEIPT -->
 <div class="receipt" id="receipt">
   <div class="receipt-header">
-    <div class="cafe-name">NARASIMHA CAFE</div>
-    <div class="cafe-tagline">Thank you for visiting!</div>
+    {% load static %}
+    <img src="{% static 'caffe/cafe.png' %}" alt="Kovur Grand" style="height:70px; width:auto; margin-bottom:6px; display:block; margin-left:auto; margin-right:auto;">
+    <div class="cafe-name">KOVUR GRAND</div>
+    <div class="cafe-tagline">Taste The Best · Nellore</div>
   </div>
   <div class="receipt-body">
     <div class="receipt-meta">
       <div><strong>Bill No:</strong> {{ order.bill_no }}</div>
       <div><strong>Date:</strong> {{ order.created_at|date:"d M Y" }}</div>
       <div><strong>Time:</strong> {{ order.created_at|date:"h:i A" }}</div>
+      {% if order.payment_method != 'pending' %}
+      <div><strong>Payment:</strong>
+        {% if order.payment_method == 'cash' %}
+          <span class="payment-tag cash">💵 Cash</span>
+        {% else %}
+          <span class="payment-tag qr">📱 QR / PhonePe</span>
+        {% endif %}
+      </div>
+      {% endif %}
     </div>
 
     <hr class="divider">
@@ -234,24 +224,80 @@
         <span>TOTAL</span>
         <span>₹{{ order.grand_total }}</span>
       </div>
-      {% if order.tax %}
-      <div style="text-align:right; font-size:11px; color:#888; margin-top:4px;">
-        Inclusive of GST ({{ gst_percent }}%)
-      </div>
-      {% endif %}
     </div>
   </div>
 
   <div class="receipt-footer">
     <strong>Thank you! 😊</strong>
-    Visit us again
+    Visit us again · Kovur Grand, Nellore
   </div>
 </div>
 
 <div class="status-bar" id="status"></div>
 
+<!-- QR MODAL -->
+<div class="qr-overlay" id="qr-modal">
+  <div class="qr-box">
+    <h3>📱 Scan to Pay</h3>
+    <p>PhonePe / UPI</p>
+    <img src="{% load static %}{% static 'caffe/online_payment.jpg' %}" alt="PhonePe QR Code"
+         onerror="this.src='https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=upi://pay?pa=narasimha@ybl'">
+    <div class="qr-amount">₹{{ order.grand_total }}<span> total amount</span></div>
+    <button class="btn-qr-done" onclick="confirmQR()">✅ Payment Done</button>
+    <button class="btn-qr-close" onclick="closeQR()">✕ Close</button>
+  </div>
+</div>
+
 <script>
-/* ── Bluetooth Thermal Printer ── */
+// ── THEME ──
+function toggleTheme() {
+  const isLight = document.body.classList.toggle('light');
+  localStorage.setItem('theme', isLight ? 'light' : 'dark');
+  document.getElementById('themeBtn').textContent = isLight ? '🌙' : '☀️';
+}
+(function () {
+  if (localStorage.getItem('theme') === 'light') {
+    document.body.classList.add('light');
+    document.addEventListener('DOMContentLoaded', function () {
+      var btn = document.getElementById('themeBtn');
+      if (btn) btn.textContent = '🌙';
+    });
+  }
+})();
+
+const CSRF   = '{{ csrf_token }}';
+const billId = {{ order.id }};
+
+async function selectPayment(method) {
+  if (method === 'qr') {
+    document.getElementById('qr-modal').classList.add('open');
+    return;
+  }
+  await savePayment('cash');
+  document.getElementById('btn-cash').classList.add('selected');
+  const status = document.getElementById('pay-status');
+  status.className = 'payment-status cash';
+  status.textContent = '✅ Cash payment recorded!';
+  setTimeout(() => location.reload(), 1000);
+}
+
+async function confirmQR() {
+  await savePayment('qr');
+  document.getElementById('qr-modal').classList.remove('open');
+  setTimeout(() => location.reload(), 500);
+}
+
+function closeQR() { document.getElementById('qr-modal').classList.remove('open'); }
+
+async function savePayment(method) {
+  await fetch("{% url 'set_payment' order.id %}", {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': CSRF },
+    body: `method=${method}`
+  });
+}
+
+/* ── Bluetooth Printer ── */
 let printerChar = null;
 
 async function connectPrinter() {
@@ -260,19 +306,14 @@ async function connectPrinter() {
   try {
     status.className = 'status-bar';
     status.textContent = 'Searching for printer...';
-
-    const device = await navigator.bluetooth.requestDevice({
-      acceptAllDevices: true,
-      optionalServices: ['000018f0-0000-1000-8000-00805f9b34fb']
-    });
+    const device  = await navigator.bluetooth.requestDevice({ acceptAllDevices: true, optionalServices: ['000018f0-0000-1000-8000-00805f9b34fb'] });
     const server  = await device.gatt.connect();
     const service = await server.getPrimaryService('000018f0-0000-1000-8000-00805f9b34fb');
     printerChar   = await service.getCharacteristic('00002af1-0000-1000-8000-00805f9b34fb');
-
     btn.textContent = '✅ Connected';
     btn.classList.add('connected');
     status.className = 'status-bar ok';
-    status.textContent = 'Printer connected! Ready to print.';
+    status.textContent = 'Printer connected!';
   } catch(e) {
     status.className = 'status-bar err';
     status.textContent = 'Could not connect: ' + e.message;
@@ -288,65 +329,44 @@ async function sendToDevice(data) {
 
 async function printBill() {
   const status = document.getElementById('status');
-
-  if (!printerChar) {
-    status.className = 'status-bar err';
-    status.textContent = 'Connect printer first!';
-    return;
-  }
-
-  status.className = 'status-bar';
-  status.textContent = 'Printing...';
-
+  if (!printerChar) { status.className = 'status-bar err'; status.textContent = 'Connect printer first!'; return; }
+  status.className = 'status-bar'; status.textContent = 'Printing...';
   try {
-    // Build receipt text (58mm = 32 chars per line)
     const W = 32;
     const divider = '-'.repeat(W);
-
-    function center(text) {
-      const pad = Math.max(0, Math.floor((W - text.length) / 2));
-      return ' '.repeat(pad) + text;
-    }
-    function leftRight(l, r) {
-      const space = Math.max(1, W - l.length - r.length);
-      return l + ' '.repeat(space) + r;
-    }
+    function center(t) { const p = Math.max(0, Math.floor((W - t.length) / 2)); return ' '.repeat(p) + t; }
+    function leftRight(l, r) { const s = Math.max(1, W - l.length - r.length); return l + ' '.repeat(s) + r; }
 
     let lines = [];
-    lines.push(center('NARASIMHA CAFE'));
-    lines.push(center('Thank you for visiting!'));
+    lines.push(center('KOVUR GRAND'));
+    lines.push(center('Nellore'));
     lines.push(divider);
-    lines.push('Bill No: {{ order.bill_no }}');
+    lines.push('Bill: {{ order.bill_no }}');
     lines.push('Date: {{ order.created_at|date:"d M Y" }}');
     lines.push('Time: {{ order.created_at|date:"h:i A" }}');
+    lines.push('Pay : {{ order.get_payment_method_display }}');
     lines.push(divider);
     lines.push(leftRight('Item', 'Amt'));
     lines.push(divider);
-
     {% for item in order.items.all %}
     lines.push(leftRight('{{ item.name|escapejs }} x{{ item.quantity }}', 'Rs.{{ item.total }}'));
     {% endfor %}
-
     lines.push(divider);
     lines.push(leftRight('Subtotal', 'Rs.{{ order.subtotal }}'));
     {% if order.tax %}
-    lines.push(leftRight('Tax 5%', 'Rs.{{ order.tax }}'));
+    lines.push(leftRight('GST ({{ gst_percent }}%)', 'Rs.{{ order.tax }}'));
     {% endif %}
     lines.push(divider);
     lines.push(leftRight('TOTAL', 'Rs.{{ order.grand_total }}'));
     lines.push(divider);
     lines.push(center('Thank you! Visit again'));
-    lines.push('\n\n\n');   // paper feed
+    lines.push('\n\n\n');
 
-    const text = lines.join('\n');
     const encoder = new TextEncoder();
-    await sendToDevice(encoder.encode(text));
-
-    status.className = 'status-bar ok';
-    status.textContent = '✅ Printed successfully!';
+    await sendToDevice(encoder.encode(lines.join('\n')));
+    status.className = 'status-bar ok'; status.textContent = '✅ Printed!';
   } catch(e) {
-    status.className = 'status-bar err';
-    status.textContent = 'Print failed: ' + e.message;
+    status.className = 'status-bar err'; status.textContent = 'Print failed: ' + e.message;
   }
 }
 </script>

@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard – Kovur Grand</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0f1117; --surface: #1a1d27; --card: #22263a;
+  --accent: #f97316; --accent2: #fb923c; --text: #f1f5f9;
+  --muted: #94a3b8; --border: #2e3347; --green: #22c55e;
+  --red: #ef4444; --blue: #60a5fa; --purple: #a78bfa;
+}
+body.light {
+  --bg: #f4f6fb; --surface: #ffffff; --card: #f0f2f8;
+  --accent: #f97316; --text: #1a1d27; --muted: #6b7280;
+  --border: #d1d5db; --green: #16a34a; --red: #dc2626;
+  --blue: #2563eb; --purple: #7c3aed;
+}
+body {
+  background: var(--bg); color: var(--text);
+  font-family: 'Segoe UI', sans-serif;
+  padding-bottom: 68px; transition: background 0.2s, color 0.2s;
+}
+
+/* ── TOPBAR ── */
+.topbar {
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  padding: 0 14px; height: 50px; display: flex; align-items: center;
+  justify-content: space-between; position: sticky; top: 0; z-index: 20;
+}
+.topbar-brand { display: flex; align-items: center; gap: 9px; }
+.topbar-brand h1 { font-size: 18px; font-weight: 800; }
+.topbar-brand h1 span { color: var(--accent); }
+.topbar-brand small { display: block; font-size: 10px; color: var(--muted); margin-top: -2px; }
+.desk-nav { display: none; align-items: center; gap: 2px; }
+.desk-nav a, .desk-nav button {
+  color: var(--muted); text-decoration: none; font-size: 13px; font-weight: 500;
+  padding: 7px 12px; border-radius: 8px; border: none; background: none;
+  cursor: pointer; transition: all 0.15s; white-space: nowrap;
+}
+.desk-nav a:hover, .desk-nav button:hover { color: var(--text); background: var(--card); }
+.desk-nav a.active { color: var(--accent); background: rgba(249,115,22,0.12); font-weight: 700; }
+.desk-nav .theme-btn { border: 1px solid var(--border); background: var(--card); color: var(--text); border-radius: 20px; font-size: 12px; font-weight: 600; }
+
+/* ── BOTTOM NAV ── */
+.bottom-nav {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  display: flex; background: var(--surface);
+  border-top: 1.5px solid var(--border);
+  padding: 0 0 env(safe-area-inset-bottom, 0); z-index: 100;
+}
+.bnav-item {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 2px;
+  text-decoration: none; color: var(--muted);
+  padding: 7px 2px 8px; cursor: pointer; border: none; background: none;
+  -webkit-tap-highlight-color: transparent; transition: color 0.15s;
+}
+.bnav-item:active { background: var(--card); }
+.bnav-item.active { color: var(--accent); }
+.bnav-icon { font-size: 20px; line-height: 1; }
+.bnav-label { font-size: 10px; font-weight: 600; }
+@media (min-width: 768px) {
+  .bottom-nav { display: none; }
+  .desk-nav { display: flex; }
+  body { padding-bottom: 0; }
+  .topbar { height: 54px; padding: 0 20px; }
+}
+
+/* ── LAYOUT ── */
+.container { padding: 14px; max-width: 700px; margin: 0 auto; }
+.section-title {
+  font-size: 11px; font-weight: 800; color: var(--muted);
+  text-transform: uppercase; letter-spacing: 1px;
+  margin: 20px 0 10px; display: flex; align-items: center; gap: 6px;
+}
+.section-title::after { content:''; flex:1; height:1px; background: var(--border); }
+
+/* ── PROFILE HEADER CARD ── */
+.profile-hero {
+  background: linear-gradient(135deg, var(--accent) 0%, #ea580c 100%);
+  border-radius: 18px; padding: 20px; margin-bottom: 6px;
+  display: flex; align-items: center; gap: 16px;
+  position: relative; overflow: hidden;
+}
+.profile-hero::before {
+  content: '☕'; position: absolute; right: 16px; top: 50%;
+  transform: translateY(-50%); font-size: 72px; opacity: 0.15;
+}
+.avatar {
+  width: 60px; height: 60px; border-radius: 50%;
+  background: rgba(255,255,255,0.25); border: 3px solid rgba(255,255,255,0.5);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px; flex-shrink: 0;
+}
+.profile-info { flex: 1; min-width: 0; }
+.profile-info .name { font-size: 20px; font-weight: 900; color: #fff; }
+.profile-info .role { font-size: 12px; color: rgba(255,255,255,0.8); margin-top: 2px; }
+.profile-info .cafe { font-size: 13px; color: rgba(255,255,255,0.9); margin-top: 6px; font-weight: 600; }
+.profile-info .location { font-size: 11px; color: rgba(255,255,255,0.7); margin-top: 2px; }
+
+/* ── STAT GRID ── */
+.stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.stat-grid.four { grid-template-columns: repeat(2, 1fr); }
+@media (min-width: 480px) { .stat-grid.four { grid-template-columns: repeat(4, 1fr); } }
+
+.stat-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 14px; padding: 14px 12px;
+  transition: border-color 0.15s;
+}
+.stat-card:hover { border-color: var(--accent); }
+.stat-icon { font-size: 20px; margin-bottom: 8px; }
+.stat-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+.stat-value { font-size: 22px; font-weight: 900; line-height: 1; }
+.stat-value.green  { color: var(--green); }
+.stat-value.orange { color: var(--accent); }
+.stat-value.blue   { color: var(--blue); }
+.stat-value.purple { color: var(--purple); }
+.stat-value.red    { color: var(--red); }
+.stat-sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+/* ── REVENUE CHART (pure CSS bars) ── */
+.chart-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 14px; padding: 16px;
+}
+.chart-title { font-size: 13px; font-weight: 700; margin-bottom: 14px; }
+.bar-chart { display: flex; align-items: flex-end; gap: 6px; height: 80px; }
+.bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px; height: 100%; }
+.bar {
+  width: 100%; background: var(--accent); border-radius: 5px 5px 0 0;
+  min-height: 3px; transition: height 0.5s ease;
+  position: relative;
+}
+.bar.today { background: var(--green); }
+.bar-label { font-size: 10px; color: var(--muted); font-weight: 600; }
+
+/* ── PAYMENT SPLIT ── */
+.pay-split {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 14px; padding: 16px;
+}
+.pay-split-title { font-size: 13px; font-weight: 700; margin-bottom: 12px; }
+.pay-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.pay-icon { font-size: 20px; width: 30px; }
+.pay-info { flex: 1; }
+.pay-name { font-size: 13px; font-weight: 600; }
+.pay-amount { font-size: 12px; color: var(--muted); }
+.pay-bar-bg { width: 100%; height: 8px; background: var(--card); border-radius: 99px; margin-top: 5px; overflow: hidden; }
+.pay-bar-fill { height: 100%; border-radius: 99px; transition: width 0.6s ease; }
+.pay-bar-fill.cash   { background: var(--green); }
+.pay-bar-fill.qr     { background: var(--purple); }
+.pay-bar-fill.pending { background: #eab308; }
+.pay-pct { font-size: 12px; font-weight: 700; width: 36px; text-align: right; flex-shrink: 0; }
+
+/* ── TOP ITEMS ── */
+.top-item {
+  background: var(--card); border-radius: 10px;
+  padding: 10px 12px; margin-bottom: 6px;
+  display: flex; align-items: center; gap: 10px;
+}
+.top-rank {
+  width: 26px; height: 26px; border-radius: 50%;
+  background: rgba(249,115,22,0.15); color: var(--accent);
+  font-size: 12px; font-weight: 900; display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.top-rank.r1 { background: rgba(234,179,8,0.2); color: #eab308; }
+.top-rank.r2 { background: rgba(148,163,184,0.2); color: #94a3b8; }
+.top-rank.r3 { background: rgba(180,83,9,0.2); color: #b45309; }
+.top-name { flex: 1; font-size: 14px; font-weight: 600; }
+.top-meta { font-size: 12px; color: var(--muted); }
+.top-qty { font-size: 14px; font-weight: 800; color: var(--green); }
+
+/* ── QUICK ACTIONS ── */
+.action-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+@media (min-width: 480px) { .action-grid { grid-template-columns: repeat(3, 1fr); } }
+.action-btn {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 14px; padding: 14px 8px;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  text-decoration: none; color: var(--text); cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  font-size: 12px; font-weight: 600; text-align: center;
+  -webkit-tap-highlight-color: transparent;
+}
+.action-btn:hover { border-color: var(--accent); background: var(--card); }
+.action-btn .a-icon { font-size: 24px; }
+.action-btn.danger { color: var(--red); border-color: rgba(239,68,68,0.3); }
+.action-btn.danger:hover { background: rgba(239,68,68,0.08); border-color: var(--red); }
+
+/* ── SUMMARY ROW ── */
+.summary-row {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+}
+.sum-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 14px; padding: 14px;
+}
+.sum-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+.sum-value { font-size: 20px; font-weight: 900; color: var(--green); }
+.sum-sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+/* ── PURCHASE CARD ── */
+.purchase-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 14px; padding: 16px;
+  display: flex; align-items: center; gap: 14px;
+}
+.purchase-card .p-icon { font-size: 32px; }
+.purchase-card .p-info { flex: 1; }
+.purchase-card .p-title { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+.purchase-card .p-value { font-size: 22px; font-weight: 900; color: var(--accent); margin: 4px 0; }
+.purchase-card .p-sub { font-size: 12px; color: var(--muted); }
+
+/* ── SETTINGS CARD ── */
+.settings-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 14px; padding: 16px;
+}
+.setting-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 0; border-bottom: 1px solid var(--border);
+}
+.setting-row:last-child { border-bottom: none; padding-bottom: 0; }
+.setting-row:first-child { padding-top: 0; }
+.setting-label { font-size: 14px; font-weight: 600; }
+.setting-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.setting-value {
+  font-size: 13px; font-weight: 700; color: var(--accent);
+  background: rgba(249,115,22,0.1); padding: 4px 10px;
+  border-radius: 8px;
+}
+
+/* ── PASSWORD FORM ── */
+.pw-form {
+  background: var(--card); border-radius: 12px; padding: 14px; margin-top: 12px;
+  display: none;
+}
+.pw-form.open { display: block; }
+.pw-form input {
+  width: 100%; background: var(--surface); border: 1px solid var(--border);
+  color: var(--text); padding: 9px 12px; border-radius: 8px;
+  font-size: 14px; outline: none; margin-bottom: 8px;
+}
+.pw-form input:focus { border-color: var(--accent); }
+.pw-form input::placeholder { color: var(--muted); }
+.pw-form .btn-save {
+  width: 100%; background: var(--accent); color: #fff; border: none;
+  padding: 10px; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer;
+}
+.alert { padding: 10px 12px; border-radius: 8px; font-size: 13px; font-weight: 600; margin-bottom: 10px; }
+.alert.error   { background: rgba(239,68,68,0.15); color: var(--red); border: 1px solid rgba(239,68,68,0.3); }
+.alert.success { background: rgba(34,197,94,0.15); color: var(--green); border: 1px solid rgba(34,197,94,0.3); }
+
+/* ── THEME TOGGLE in settings ── */
+.theme-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 0; border-bottom: 1px solid var(--border);
+}
+.toggle-switch { position: relative; width: 48px; height: 26px; }
+.toggle-switch input { opacity: 0; width: 0; height: 0; }
+.toggle-track {
+  position: absolute; cursor: pointer; inset: 0;
+  background: var(--border); border-radius: 99px; transition: 0.2s;
+}
+.toggle-track:before {
+  content: ''; position: absolute; height: 20px; width: 20px;
+  left: 3px; bottom: 3px; background: white; border-radius: 50%; transition: 0.2s;
+}
+input:checked + .toggle-track { background: var(--accent); }
+input:checked + .toggle-track:before { transform: translateX(22px); }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="topbar-brand">
+    <img src="{% static 'caffe/cafe.png' %}" alt="Kovur Grand" style="height:38px; width:auto; object-fit:contain;">
+    <div>
+      <h1>Kovur <span>Grand</span></h1>
+      <small>Taste The Best</small>
+    </div>
+  </div>
+  <nav class="desk-nav">
+    <a href="{% url 'order_screen' %}">🏠 Home</a>
+    <a href="{% url 'bill_history' %}">🧾 Bills</a>
+    <a href="{% url 'sales_report' %}">📊 Sales</a>
+    <a href="{% url 'purchase_list' %}">🛒 Purchases</a>
+    <a href="{% url 'menu_manager' %}">⚙️ Menu</a>
+    <a href="{% url 'profile_dashboard' %}" class="active">👤 Profile</a>
+    <button class="theme-btn" onclick="toggleTheme()" id="themeBtn">☀️ Light</button>
+  </nav>
+</div>
+
+<div class="container">
+
+  <!-- ══ 1. PROFILE HERO ══ -->
+  <div class="section-title">👤 Profile</div>
+  <div class="profile-hero">
+    <div class="avatar" style="background:rgba(255,255,255,0.1); overflow:hidden;">
+      <img src="{% static 'caffe/cafe.png' %}" alt="Kovur Grand" style="height:52px; width:auto; object-fit:contain;">
+    </div>
+    <div class="profile-info">
+      <div class="name">{{ user.username }}</div>
+      <div class="role">{% if user.is_superuser %}Owner / Admin{% else %}Staff{% endif %}</div>
+      <div class="cafe">👑 Kovur Grand</div>
+      <div class="location">📍 Nellore, Andhra Pradesh</div>
+    </div>
+  </div>
+
+  <!-- ══ 2. TODAY STATS ══ -->
+  <div class="section-title">📅 Today — {{ today }}</div>
+  <div class="stat-grid four">
+    <div class="stat-card">
+      <div class="stat-icon">💰</div>
+      <div class="stat-label">Revenue</div>
+      <div class="stat-value green">₹{{ today_revenue }}</div>
+      <div class="stat-sub">Today's earnings</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">🧾</div>
+      <div class="stat-label">Bills</div>
+      <div class="stat-value orange">{{ today_bills }}</div>
+      <div class="stat-sub">Generated today</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">🍽️</div>
+      <div class="stat-label">Items Sold</div>
+      <div class="stat-value blue">{{ today_items }}</div>
+      <div class="stat-sub">Total quantity</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">⏳</div>
+      <div class="stat-label">Pending</div>
+      <div class="stat-value {% if today_pending > 0 %}red{% else %}green{% endif %}">{{ today_pending }}</div>
+      <div class="stat-sub">Unpaid bills</div>
+    </div>
+  </div>
+
+  <!-- ══ 3. REVENUE CHART — LAST 7 DAYS ══ -->
+  <div class="section-title">📈 Last 7 Days Revenue</div>
+  <div class="chart-card">
+    <div class="bar-chart" id="barChart">
+      <!-- JS rendered -->
+    </div>
+  </div>
+
+  <!-- ══ 4. PAYMENT BREAKDOWN ══ -->
+  <div class="section-title">💳 Today's Payment Split</div>
+  <div class="pay-split">
+    <div class="pay-row">
+      <div class="pay-icon">💵</div>
+      <div class="pay-info">
+        <div class="pay-name">Cash</div>
+        <div class="pay-amount">₹{{ today_cash }}</div>
+        <div class="pay-bar-bg"><div class="pay-bar-fill cash" style="width:{{ cash_pct }}%"></div></div>
+      </div>
+      <div class="pay-pct" style="color:var(--green)">{{ cash_pct }}%</div>
+    </div>
+    <div class="pay-row">
+      <div class="pay-icon">📱</div>
+      <div class="pay-info">
+        <div class="pay-name">QR / PhonePe</div>
+        <div class="pay-amount">₹{{ today_qr }}</div>
+        <div class="pay-bar-bg"><div class="pay-bar-fill qr" style="width:{{ qr_pct }}%"></div></div>
+      </div>
+      <div class="pay-pct" style="color:var(--purple)">{{ qr_pct }}%</div>
+    </div>
+    {% if today_pending > 0 %}
+    <div class="pay-row" style="margin-bottom:0">
+      <div class="pay-icon">⏳</div>
+      <div class="pay-info">
+        <div class="pay-name">Pending</div>
+        <div class="pay-amount">{{ today_pending }} bill{{ today_pending|pluralize }}</div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- ══ 5. THIS WEEK / MONTH ══ -->
+  <div class="section-title">📊 Week & Month Summary</div>
+  <div class="summary-row">
+    <div class="sum-card">
+      <div class="sum-label">This Week</div>
+      <div class="sum-value">₹{{ week_revenue }}</div>
+      <div class="sum-sub">{{ week_bills }} bill{{ week_bills|pluralize }}</div>
+    </div>
+    <div class="sum-card">
+      <div class="sum-label">This Month</div>
+      <div class="sum-value" style="color:var(--accent)">₹{{ month_revenue }}</div>
+      <div class="sum-sub">{{ month_bills }} bill{{ month_bills|pluralize }}</div>
+    </div>
+  </div>
+
+  <!-- ══ 6. ALL TIME ══ -->
+  <div class="section-title">🏆 All Time</div>
+  <div class="stat-grid">
+    <div class="stat-card">
+      <div class="stat-icon">💎</div>
+      <div class="stat-label">Total Revenue</div>
+      <div class="stat-value green">₹{{ total_revenue }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">📋</div>
+      <div class="stat-label">Total Bills</div>
+      <div class="stat-value orange">{{ total_bills }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">🍽️</div>
+      <div class="stat-label">Menu Items</div>
+      <div class="stat-value blue">{{ total_menu_items }}</div>
+      <div class="stat-sub">{{ total_categories }} categories</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">🛒</div>
+      <div class="stat-label">Purchases (Month)</div>
+      <div class="stat-value purple">₹{{ month_purchases }}</div>
+    </div>
+  </div>
+
+  <!-- ══ 7. TODAY'S TOP ITEMS ══ -->
+  <div class="section-title">🔥 Today's Top Items</div>
+  {% if top_items_today %}
+    {% for item in top_items_today %}
+    <div class="top-item">
+      <div class="top-rank {% if forloop.counter == 1 %}r1{% elif forloop.counter == 2 %}r2{% elif forloop.counter == 3 %}r3{% endif %}">
+        #{{ forloop.counter }}
+      </div>
+      <div class="top-name">{{ item.name }}</div>
+      <div class="top-meta">{{ item.qty }} sold</div>
+    </div>
+    {% endfor %}
+  {% else %}
+    <div style="text-align:center; color:var(--muted); padding:20px; background:var(--surface); border-radius:14px; border:1px solid var(--border);">
+      No sales yet today
+    </div>
+  {% endif %}
+
+  <!-- ══ 8. LAST PURCHASE ══ -->
+  <div class="section-title">🛒 Purchase Info</div>
+  <div class="purchase-card">
+    <div class="p-icon">🏪</div>
+    <div class="p-info">
+      <div class="p-title">This Month Spent</div>
+      <div class="p-value">₹{{ month_purchases }}</div>
+      {% if last_purchase %}
+      <div class="p-sub">Last: {{ last_purchase.item.name }} from {{ last_purchase.shop_name }} on {{ last_purchase.date }}</div>
+      {% else %}
+      <div class="p-sub">No purchases recorded yet</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- ══ 9. QUICK ACTIONS ══ -->
+  <div class="section-title">⚡ Quick Actions</div>
+  <div class="action-grid">
+    <a class="action-btn" href="{% url 'order_screen' %}">
+      <span class="a-icon">🏠</span>New Order
+    </a>
+    <a class="action-btn" href="{% url 'bill_history' %}">
+      <span class="a-icon">🧾</span>Bills
+    </a>
+    <a class="action-btn" href="{% url 'sales_report' %}">
+      <span class="a-icon">📊</span>Sales
+    </a>
+    <a class="action-btn" href="{% url 'purchase_list' %}">
+      <span class="a-icon">🛒</span>Purchases
+    </a>
+    <a class="action-btn" href="{% url 'menu_manager' %}">
+      <span class="a-icon">⚙️</span>Menu
+    </a>
+    <a class="action-btn danger" href="{% url 'caffe_logout' %}">
+      <span class="a-icon">🚪</span>Logout
+    </a>
+  </div>
+
+  <!-- ══ 10. SETTINGS ══ -->
+  <div class="section-title">⚙️ Settings</div>
+  <div class="settings-card">
+
+    <!-- Theme toggle -->
+    <div class="theme-row">
+      <div>
+        <div class="setting-label">🌙 Dark Mode</div>
+        <div class="setting-sub">Toggle light / dark theme</div>
+      </div>
+      <label class="toggle-switch">
+        <input type="checkbox" id="themeToggleSwitch" onchange="toggleTheme()">
+        <span class="toggle-track"></span>
+      </label>
+    </div>
+
+    <!-- Cafe info -->
+    <div class="setting-row">
+      <div>
+        <div class="setting-label">☕ Cafe Name</div>
+        <div class="setting-sub">Displayed on all bills</div>
+      </div>
+      <div class="setting-value">Kovur Grand</div>
+    </div>
+
+    <div class="setting-row">
+      <div>
+        <div class="setting-label">📍 Location</div>
+        <div class="setting-sub">City, State</div>
+      </div>
+      <div class="setting-value">Nellore, AP</div>
+    </div>
+
+    <div class="setting-row">
+      <div>
+        <div class="setting-label">💹 GST</div>
+        <div class="setting-sub">Applied on all bills</div>
+      </div>
+      <div class="setting-value">{{ gst_percent }}%</div>
+    </div>
+
+    <div class="setting-row">
+      <div>
+        <div class="setting-label">👤 Username</div>
+        <div class="setting-sub">Your login name</div>
+      </div>
+      <div class="setting-value">{{ user.username }}</div>
+    </div>
+
+    <!-- Change Password -->
+    <div class="setting-row" style="border-bottom:none; padding-bottom:0; flex-direction:column; align-items:flex-start; gap:10px;">
+      <div style="display:flex; justify-content:space-between; width:100%; align-items:center;">
+        <div>
+          <div class="setting-label">🔑 Password</div>
+          <div class="setting-sub">Update your login password</div>
+        </div>
+        <button onclick="togglePwForm()" style="background:var(--card); border:1px solid var(--border); color:var(--text); padding:6px 14px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer;" id="pwToggleBtn">Change</button>
+      </div>
+
+      <div class="pw-form {% if pw_error or pw_success %}open{% endif %}" id="pwForm">
+        {% if pw_error %}
+        <div class="alert error">{{ pw_error }}</div>
+        {% endif %}
+        {% if pw_success %}
+        <div class="alert success">{{ pw_success }}</div>
+        {% endif %}
+        <form method="POST" action="{% url 'profile_dashboard' %}">
+          {% csrf_token %}
+          <input type="hidden" name="change_password" value="1">
+          <input type="password" name="old_password" placeholder="Current password" required>
+          <input type="password" name="new_password1" placeholder="New password (min 6 chars)" required>
+          <input type="password" name="new_password2" placeholder="Confirm new password" required>
+          <button type="submit" class="btn-save">🔑 Update Password</button>
+        </form>
+      </div>
+    </div>
+
+  </div>
+
+  <div style="text-align:center; color:var(--muted); font-size:11px; padding: 20px 0 8px;">
+    Kovur Grand · Nellore · PS Digital Solutions
+  </div>
+
+</div>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav">
+  <a class="bnav-item" href="{% url 'order_screen' %}"><span class="bnav-icon">🏠</span><span class="bnav-label">Home</span></a>
+  <a class="bnav-item" href="{% url 'bill_history' %}"><span class="bnav-icon">🧾</span><span class="bnav-label">Bills</span></a>
+  <a class="bnav-item" href="{% url 'sales_report' %}"><span class="bnav-icon">📊</span><span class="bnav-label">Sales</span></a>
+  <a class="bnav-item" href="{% url 'purchase_list' %}"><span class="bnav-icon">🛒</span><span class="bnav-label">Purchases</span></a>
+  <a class="bnav-item" href="{% url 'menu_manager' %}"><span class="bnav-icon">⚙️</span><span class="bnav-label">Menu</span></a>
+  <a class="bnav-item active" href="{% url 'profile_dashboard' %}"><span class="bnav-icon">👤</span><span class="bnav-label">Profile</span></a>
+</nav>
+
+<script>
+// ── THEME ──
+function toggleTheme() {
+  const isLight = document.body.classList.toggle('light');
+  localStorage.setItem('theme', isLight ? 'light' : 'dark');
+  applyThemeUI(isLight);
+}
+function applyThemeUI(isLight) {
+  const db = document.getElementById('themeBtn');
+  if (db) db.textContent = isLight ? '🌙 Dark' : '☀️ Light';
+  const sw = document.getElementById('themeToggleSwitch');
+  if (sw) sw.checked = isLight;
+}
+(function () {
+  if (localStorage.getItem('theme') === 'light') {
+    document.body.classList.add('light');
+    document.addEventListener('DOMContentLoaded', () => applyThemeUI(true));
+  }
+})();
+
+// ── PASSWORD FORM TOGGLE ──
+function togglePwForm() {
+  const form = document.getElementById('pwForm');
+  const btn  = document.getElementById('pwToggleBtn');
+  form.classList.toggle('open');
+  btn.textContent = form.classList.contains('open') ? 'Cancel' : 'Change';
+}
+
+// ── BAR CHART ──
+document.addEventListener('DOMContentLoaded', function () {
+  const data = {{ daily_revenue|safe }};
+  const max  = Math.max(...data.map(d => d.amount), 1);
+  const container = document.getElementById('barChart');
+  const today = data[data.length - 1].date;
+  container.innerHTML = data.map((d, i) => {
+    const pct = Math.max((d.amount / max) * 100, 3);
+    const isToday = i === data.length - 1;
+    return `<div class="bar-wrap">
+      <div class="bar ${isToday ? 'today' : ''}" style="height:${pct}%" title="₹${d.amount}"></div>
+      <div class="bar-label">${d.date}</div>
+    </div>`;
+  }).join('');
+});
+</script>
+</body>
+</html>

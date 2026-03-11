@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Purchases – Kovur Grand</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0f1117; --surface: #1a1d27; --card: #22263a;
+  --accent: #f97316; --text: #f1f5f9; --muted: #94a3b8;
+  --border: #2e3347; --green: #22c55e; --red: #ef4444; --yellow: #eab308;
+}
+body.light {
+  --bg: #f4f6fb; --surface: #ffffff; --card: #f0f2f8;
+  --accent: #f97316; --text: #1a1d27; --muted: #6b7280;
+  --border: #d1d5db; --green: #16a34a; --red: #dc2626; --yellow: #ca8a04;
+}
+
+body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; padding-bottom: 68px; transition: background 0.2s, color 0.2s; }
+
+/* inputs visible in light mode */
+body.light .grocery-input,
+body.light .field-group input,
+body.light .add-item-input,
+body.light .month-input { color: var(--text); }
+
+/* ── TOPBAR ── */
+.topbar {
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  padding: 0 14px; height: 50px; display: flex; align-items: center;
+  justify-content: space-between; position: sticky; top: 0; z-index: 20;
+}
+.topbar-brand { display: flex; align-items: center; gap: 9px; }
+.topbar-brand h1 { font-size: 18px; font-weight: 800; }
+.topbar-brand h1 span { color: var(--accent); }
+.topbar-brand small { display: block; font-size: 10px; color: var(--muted); margin-top: -2px; }
+.desk-nav { display: none; align-items: center; gap: 2px; }
+.desk-nav a, .desk-nav button {
+  color: var(--muted); text-decoration: none; font-size: 13px; font-weight: 500;
+  padding: 7px 12px; border-radius: 8px; border: none; background: none;
+  cursor: pointer; transition: all 0.15s; white-space: nowrap;
+}
+.desk-nav a:hover, .desk-nav button:hover { color: var(--text); background: var(--card); }
+.desk-nav a.active { color: var(--accent); background: rgba(249,115,22,0.12); font-weight: 700; }
+.desk-nav .theme-btn { border: 1px solid var(--border); background: var(--card); color: var(--text); border-radius: 20px; font-size: 12px; font-weight: 600; }
+.bottom-nav {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  display: flex; background: var(--surface);
+  border-top: 1.5px solid var(--border);
+  padding: 0 0 env(safe-area-inset-bottom, 0); z-index: 100;
+}
+.bnav-item {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 2px;
+  text-decoration: none; color: var(--muted);
+  padding: 7px 2px 8px; cursor: pointer; border: none; background: none;
+  -webkit-tap-highlight-color: transparent; transition: color 0.15s;
+}
+.bnav-item:active { background: var(--card); }
+.bnav-item.active { color: var(--accent); }
+.bnav-icon { font-size: 20px; line-height: 1; }
+.bnav-label { font-size: 10px; font-weight: 600; }
+@media (min-width: 768px) {
+  .bottom-nav { display: none; }
+  .desk-nav { display: flex; }
+  body { padding-bottom: 0; }
+  .topbar { height: 54px; padding: 0 20px; }
+}
+
+.container { padding: 16px; max-width: 600px; margin: 0 auto; }
+
+/* ── TABS ── */
+.tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+.tab-btn { flex: 1; padding: 10px; border-radius: 10px; border: 1px solid var(--border); background: var(--card); color: var(--muted); font-size: 14px; font-weight: 600; cursor: pointer; }
+.tab-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* ── ADD ENTRY FORM ── */
+.entry-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 16px; margin-bottom: 16px; }
+.entry-card h2 { font-size: 15px; font-weight: 700; color: var(--accent); margin-bottom: 12px; }
+
+.top-fields { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+.field-group { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 130px; }
+.field-group label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+.field-group input {
+  background: var(--card); border: 1px solid var(--border); color: var(--text);
+  padding: 9px 11px; border-radius: 8px; font-size: 14px; outline: none; width: 100%;
+}
+.field-group input:focus { border-color: var(--accent); }
+
+/* ── GROCERY TABLE ── */
+.grocery-table { width: 100%; border-collapse: collapse; }
+.grocery-table thead th {
+  font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px;
+  padding: 6px 8px; text-align: left; border-bottom: 1px solid var(--border);
+}
+.grocery-table tbody tr { border-bottom: 1px solid var(--border); }
+.grocery-table tbody tr:last-child { border-bottom: none; }
+.grocery-row td { padding: 10px 8px; vertical-align: middle; }
+
+.item-name { font-size: 14px; font-weight: 600; }
+.grocery-input {
+  background: var(--card); border: 1px solid var(--border); color: var(--text);
+  padding: 8px 10px; border-radius: 8px; font-size: 14px; width: 100%;
+  outline: none; text-align: center;
+}
+.grocery-input:focus { border-color: var(--accent); }
+.total-cell { font-size: 14px; font-weight: 700; color: var(--green); text-align: right; min-width: 70px; }
+
+.grand-total-row td { padding: 10px 8px; border-top: 2px solid var(--accent); }
+.grand-label { font-size: 13px; font-weight: 700; color: var(--accent); }
+.grand-value { font-size: 18px; font-weight: 800; color: var(--accent); text-align: right; }
+
+.btn-save { background: var(--accent); color: #fff; border: none; padding: 13px; border-radius: 10px; font-size: 15px; font-weight: 800; cursor: pointer; width: 100%; margin-top: 14px; letter-spacing: 0.5px; }
+.btn-save:hover { opacity: 0.9; }
+
+/* ── ADD ITEM ROW ── */
+.add-item-row { display: flex; gap: 8px; margin-top: 10px; border-top: 1px dashed var(--border); padding-top: 10px; }
+.add-item-input { flex: 1; background: var(--card); border: 1px solid var(--border); color: var(--text); padding: 9px 12px; border-radius: 8px; font-size: 14px; outline: none; }
+.add-item-input:focus { border-color: var(--accent); }
+.btn-add-item { background: var(--card); border: 1px solid var(--accent); color: var(--accent); padding: 9px 16px; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+
+/* ── HISTORY ── */
+.section-title { font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin: 16px 0 8px; }
+
+.day-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; margin-bottom: 12px; overflow: hidden; }
+.day-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 14px; cursor: pointer; background: var(--card);
+  transition: background 0.15s;
+}
+.day-header:hover { background: var(--border); }
+.day-date { font-size: 11px; color: var(--muted); font-weight: 500; margin-bottom: 2px; letter-spacing: 0.3px; }
+.day-shops { font-size: 17px; color: var(--text); font-weight: 800; line-height: 1.2; }
+.day-meta  { font-size: 11px; color: var(--muted); margin-top: 3px; }
+.day-total { font-size: 18px; font-weight: 800; color: var(--green); }
+.day-chevron { color: var(--muted); font-size: 14px; transition: transform 0.2s; }
+.day-body { padding: 0 14px; max-height: 0; overflow: hidden; transition: max-height 0.3s ease, padding 0.3s; }
+.day-body.open { max-height: 800px; padding: 10px 14px 14px; }
+
+.purchase-entry {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 0; border-bottom: 1px solid var(--border);
+}
+.purchase-entry:last-child { border-bottom: none; }
+.entry-left .ename { font-size: 14px; font-weight: 600; }
+.entry-left .emeta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.entry-right { display: flex; align-items: center; gap: 8px; }
+.entry-total { font-size: 14px; font-weight: 700; color: var(--green); }
+.btn-del { background: rgba(239,68,68,0.1); color: var(--red); border: none; padding: 5px 9px; border-radius: 7px; font-size: 12px; cursor: pointer; }
+
+/* ── MONTHLY SUMMARY ── */
+.month-filter { display: flex; gap: 8px; margin-bottom: 12px; align-items: center; flex-wrap: wrap; }
+.month-input { background: var(--card); border: 1px solid var(--border); color: var(--text); padding: 9px 12px; border-radius: 10px; font-size: 14px; outline: none; flex: 1; }
+.month-input:focus { border-color: var(--accent); }
+.btn-filter { background: var(--accent); color: #fff; border: none; padding: 9px 16px; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; }
+.btn-print  { background: rgba(34,197,94,0.1); color: var(--green); border: 1px solid var(--green); padding: 9px 16px; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; }
+
+.summary-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+.sum-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px; text-align: center; }
+.sum-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+.sum-value { font-size: 20px; font-weight: 800; }
+
+.month-row {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; padding: 12px 14px; margin-bottom: 8px;
+  display: flex; align-items: center; justify-content: space-between;
+  cursor: pointer; transition: border-color 0.15s;
+}
+.month-row:hover { border-color: var(--accent); }
+.mrow-name { font-size: 14px; font-weight: 700; }
+.mrow-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.mrow-total { font-size: 16px; font-weight: 800; color: var(--green); }
+.empty-msg { color: var(--muted); font-size: 14px; text-align: center; padding: 40px 0; }
+
+/* ── PRINT STYLES ── */
+@media print {
+  body { background: #fff; color: #000; font-family: Arial, sans-serif; }
+  .topbar, .tabs, .no-print { display: none !important; }
+  .print-only { display: block !important; }
+  .print-header { text-align: center; margin-bottom: 16px; border-bottom: 2px solid #000; padding-bottom: 10px; }
+  .print-header h2 { font-size: 20px; font-weight: 900; }
+  .print-header p  { font-size: 13px; color: #555; }
+  .print-table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+  .print-table th { background: #f0f0f0; font-size: 11px; text-transform: uppercase; padding: 6px 8px; border: 1px solid #ccc; text-align: left; }
+  .print-table td { padding: 6px 8px; border: 1px solid #ddd; font-size: 13px; }
+  .print-table tr:nth-child(even) td { background: #f9f9f9; }
+  .print-total-row td { border-top: 2px solid #000; font-weight: 800; font-size: 14px; }
+  .container { max-width: 100%; padding: 0; }
+}
+.print-only { display: none; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-brand">
+    <img src="{% static 'caffe/cafe.png' %}" alt="Kovur Grand" style="height:38px; width:auto; object-fit:contain;">
+    <div>
+      <h1>Kovur <span>Grand</span></h1>
+      <small>Taste The Best</small>
+    </div>
+  </div>
+  <nav class="desk-nav">
+    <a href="{% url 'order_screen' %}">🏠 Home</a>
+    <a href="{% url 'bill_history' %}">🧾 Bills</a>
+    <a href="{% url 'sales_report' %}">📊 Sales</a>
+    <a href="{% url 'purchase_list' %}" class="active">🛒 Purchases</a>
+    <a href="{% url 'menu_manager' %}">⚙️ Menu</a>
+    <a href="{% url 'profile_dashboard' %}">👤 Profile</a>
+    <button class="theme-btn no-print" onclick="toggleTheme()" id="themeBtn">☀️ Light</button>
+  </nav>
+</div>
+
+<div class="container">
+
+  <!-- TABS -->
+  <div class="tabs no-print">
+    <button class="tab-btn active" onclick="switchTab('add-entry', this)">📝 New Entry</button>
+    <button class="tab-btn" onclick="switchTab('day-history', this)">📅 Day Wise</button>
+    <button class="tab-btn" onclick="switchTab('monthly', this)">📊 Monthly</button>
+  </div>
+
+  <!-- ══ TAB 1: NEW ENTRY ══ -->
+  <div class="tab-content active" id="add-entry">
+    <div class="entry-card">
+      <h2>+ New Purchase Entry</h2>
+      <form method="POST" action="{% url 'save_purchases' %}" id="purchaseForm">
+        {% csrf_token %}
+
+        <div class="top-fields">
+          <div class="field-group" style="flex:2;">
+            <label>Shop Name</label>
+            <input type="text" name="shop_name" placeholder="e.g. Sri Ram Stores" required autocomplete="off">
+          </div>
+          <div class="field-group">
+            <label>Date</label>
+            <input type="date" name="date" value="{{ today }}" required>
+          </div>
+        </div>
+
+        <table class="grocery-table">
+          <thead>
+            <tr>
+              <th style="width:38%;">Item</th>
+              <th style="width:22%;">Qty</th>
+              <th style="width:22%;">Price ₹</th>
+              <th style="width:18%; text-align:right;">Total</th>
+            </tr>
+          </thead>
+          <tbody id="groceryBody">
+            {% for pi in purchase_items %}
+            <tr class="grocery-row" data-id="{{ pi.id }}">
+              <td><div class="item-name">{{ pi.name }}</div></td>
+              <td><input type="number" name="qty_{{ pi.id }}" class="grocery-input qty-input" placeholder="0" min="0" step="0.01" oninput="calcRow(this)"></td>
+              <td><input type="number" name="price_{{ pi.id }}" class="grocery-input price-input" placeholder="0" min="0" step="0.01" oninput="calcRow(this)"></td>
+              <td class="total-cell" id="total_{{ pi.id }}">—</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+          <tfoot>
+            <tr class="grand-total-row">
+              <td colspan="3" class="grand-label">Grand Total</td>
+              <td class="grand-value" id="grandTotal">₹0</td>
+            </tr>
+          </tfoot>
+        </table>
+
+        <div class="add-item-row no-print">
+          <input type="text" class="add-item-input" id="newItemName" placeholder="+ Add new item to list (e.g. Salt)">
+          <button type="button" class="btn-add-item" onclick="addNewItem()">Add</button>
+        </div>
+
+        <button type="submit" class="btn-save">💾 Save All Purchases</button>
+      </form>
+    </div>
+
+    <!-- Manage items -->
+    <div style="margin-top:4px;">
+      <div class="section-title">Manage List Items</div>
+      {% for pi in purchase_items %}
+      <div style="display:flex; align-items:center; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border);">
+        <span style="font-size:14px; font-weight:600;">{{ pi.name }}</span>
+        <form method="POST" action="{% url 'delete_purchase_item' pi.id %}" onsubmit="return confirm('Remove {{ pi.name }} from list?')">
+          {% csrf_token %}
+          <button type="submit" class="btn-del">Remove</button>
+        </form>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- ══ TAB 2: DAY WISE HISTORY ══ -->
+  <div class="tab-content" id="day-history">
+    <div class="section-title">All Purchase Days</div>
+
+    {% if dates_purchases %}
+      {% for entry_date, entries in dates_purchases.items %}
+      <div class="day-card">
+        <div class="day-header" onclick="toggleDay('day-{{ forloop.counter }}', this)">
+          <div>
+            <div class="day-shops">
+              {% for e in entries %}{% if forloop.first %}{{ e.shop_name }}{% endif %}{% endfor %}
+              {% with first_shop=entries.0.shop_name %}
+                {% for e in entries %}{% if e.shop_name != first_shop %} · {{ e.shop_name }}{% endif %}{% endfor %}
+              {% endwith %}
+            </div>
+            <div class="day-date">📅 {{ entry_date }}</div>
+            <div class="day-meta">{{ entries|length }} item{{ entries|length|pluralize }}</div>
+          </div>
+          <div style="display:flex; align-items:center; gap:10px; flex-shrink:0;">
+            <span class="day-total" id="daytotal-{{ forloop.counter }}">₹—</span>
+            <span class="day-chevron" id="chev-day-{{ forloop.counter }}">▼</span>
+          </div>
+        </div>
+        <div class="day-body" id="day-{{ forloop.counter }}">
+          {% for entry in entries %}
+          <div class="purchase-entry">
+            <div class="entry-left">
+              <div class="ename">{{ entry.item.name }}</div>
+              <div class="emeta">🏪 {{ entry.shop_name }} · {{ entry.quantity }} × ₹{{ entry.price }}</div>
+            </div>
+            <div class="entry-right">
+              <span class="entry-total" data-val="{{ entry.total }}">₹{{ entry.total }}</span>
+              <form method="POST" action="{% url 'delete_purchase' entry.id %}" onsubmit="return confirm('Delete this entry?')">
+                {% csrf_token %}
+                <button type="submit" class="btn-del">🗑</button>
+              </form>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <p class="empty-msg">No purchases yet. Add your first entry!</p>
+    {% endif %}
+  </div>
+
+  <!-- ══ TAB 3: MONTHLY SUMMARY + PRINT ══ -->
+  <div class="tab-content" id="monthly">
+
+    <form method="GET" action="{% url 'purchase_list' %}">
+      <div class="month-filter">
+        <input type="month" name="month" value="{{ filter_month|default:current_month }}" class="month-input">
+        <button type="submit" class="btn-filter">View</button>
+        {% if filter_month %}
+        <button type="button" class="btn-print no-print" onclick="printMonthly()">🖨️ Print</button>
+        {% endif %}
+      </div>
+    </form>
+
+    {% if filter_month %}
+    <!-- filtered month stats -->
+    <div class="summary-cards" id="monthlyStats">
+      <div class="sum-card">
+        <div class="sum-label">Entries</div>
+        <div class="sum-value" style="color:var(--accent);" id="totalEntries">—</div>
+      </div>
+      <div class="sum-card">
+        <div class="sum-label">Total Spent</div>
+        <div class="sum-value" style="color:var(--green);" id="totalSpent">—</div>
+      </div>
+    </div>
+
+    <div class="section-title">Entries for {{ filter_month }}</div>
+    {% for entry_date, entries in dates_purchases.items %}
+    <div class="day-card">
+      <div class="day-header" onclick="toggleDay('mday-{{ forloop.counter }}', this)">
+        <span class="day-date">{{ entry_date }}</span>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span class="day-total day-sum-cell">₹0</span>
+          <span class="day-chevron" id="chev-mday-{{ forloop.counter }}">▼</span>
+        </div>
+      </div>
+      <div class="day-body" id="mday-{{ forloop.counter }}">
+        {% for entry in entries %}
+        <div class="purchase-entry">
+          <div class="entry-left">
+            <div class="ename">{{ entry.item.name }}</div>
+            <div class="emeta">{{ entry.shop_name }} · {{ entry.quantity }} × ₹{{ entry.price }}</div>
+          </div>
+          <div class="entry-right">
+            <span class="entry-total entry-total-val" data-val="{{ entry.total }}">₹{{ entry.total }}</span>
+            <form method="POST" action="{% url 'delete_purchase' entry.id %}" onsubmit="return confirm('Delete this entry?')">
+              {% csrf_token %}
+              <button type="submit" class="btn-del">🗑</button>
+            </form>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% empty %}
+    <p class="empty-msg">No entries for {{ filter_month }}</p>
+    {% endfor %}
+    {% endif %}
+
+    <!-- Month overview -->
+    <div class="section-title" style="margin-top:20px;">Month Overview</div>
+    {% for m in monthly_summary %}
+    <div class="month-row" onclick="filterByMonth('{{ m.date__year }}-{{ m.date__month|stringformat:"02d" }}')">
+      <div>
+        <div class="mrow-name">
+          {% with mn=m.date__month %}
+            {% if mn == 1 %}January{% elif mn == 2 %}February{% elif mn == 3 %}March
+            {% elif mn == 4 %}April{% elif mn == 5 %}May{% elif mn == 6 %}June
+            {% elif mn == 7 %}July{% elif mn == 8 %}August{% elif mn == 9 %}September
+            {% elif mn == 10 %}October{% elif mn == 11 %}November{% elif mn == 12 %}December
+            {% endif %}
+          {% endwith %}
+          {{ m.date__year }}
+        </div>
+        <div class="mrow-meta">tap to view & print</div>
+      </div>
+      <div class="mrow-total">₹{{ m.total_spent }}</div>
+    </div>
+    {% empty %}
+    <p class="empty-msg">No purchase data yet.</p>
+    {% endfor %}
+
+  </div>
+</div>
+
+<!-- ══ PRINT SECTION ══ -->
+<div class="print-only" id="printSection">
+  <div class="print-header">
+    <h2>KOVUR GRAND — Nellore</h2>
+    <p>Purchase Report — {{ filter_month }}</p>
+  </div>
+  <table class="print-table">
+    <thead>
+      <tr>
+        <th>Date</th><th>Shop</th><th>Item</th><th>Qty</th><th>Price ₹</th><th>Total ₹</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for entry_date, entries in dates_purchases.items %}
+        {% for entry in entries %}
+        <tr>
+          <td>{{ entry.date|date:"d M Y" }}</td>
+          <td>{{ entry.shop_name }}</td>
+          <td>{{ entry.item.name }}</td>
+          <td>{{ entry.quantity }}</td>
+          <td>{{ entry.price }}</td>
+          <td><strong>{{ entry.total }}</strong></td>
+        </tr>
+        {% endfor %}
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<nav class="bottom-nav no-print">
+  <a class="bnav-item" href="{% url 'order_screen' %}"><span class="bnav-icon">🏠</span><span class="bnav-label">Home</span></a>
+  <a class="bnav-item" href="{% url 'bill_history' %}"><span class="bnav-icon">🧾</span><span class="bnav-label">Bills</span></a>
+  <a class="bnav-item" href="{% url 'sales_report' %}"><span class="bnav-icon">📊</span><span class="bnav-label">Sales</span></a>
+  <a class="bnav-item active" href="{% url 'purchase_list' %}"><span class="bnav-icon">🛒</span><span class="bnav-label">Purchases</span></a>
+  <a class="bnav-item" href="{% url 'menu_manager' %}"><span class="bnav-icon">⚙️</span><span class="bnav-label">Menu</span></a>
+  <a class="bnav-item" href="{% url 'profile_dashboard' %}"><span class="bnav-icon">👤</span><span class="bnav-label">Profile</span></a>
+</nav>
+
+<script>
+// ── THEME ──
+function toggleTheme() {
+  const isLight = document.body.classList.toggle('light');
+  localStorage.setItem('theme', isLight ? 'light' : 'dark');
+  applyThemeUI(isLight);
+}
+function applyThemeUI(isLight) {
+  const db = document.getElementById('themeBtn');
+  if (db) db.textContent = isLight ? '🌙 Dark' : '☀️ Light';
+  const icon = document.getElementById('themeIconMobile');
+  const label = document.getElementById('themeLabelMobile');
+  if (icon) icon.textContent = isLight ? '🌙' : '☀️';
+  if (label) label.textContent = isLight ? 'Dark' : 'Light';
+}
+(function () {
+  if (localStorage.getItem('theme') === 'light') {
+    document.body.classList.add('light');
+    document.addEventListener('DOMContentLoaded', () => applyThemeUI(true));
+  }
+})();
+
+// ── CALC ROW TOTAL ──
+function calcRow(input) {
+  const row   = input.closest('tr');
+  const id    = row.dataset.id;
+  const qty   = parseFloat(row.querySelector('.qty-input').value) || 0;
+  const price = parseFloat(row.querySelector('.price-input').value) || 0;
+  const total = qty * price;
+  const cell  = document.getElementById('total_' + id);
+  cell.textContent = total > 0 ? '₹' + total.toFixed(2) : '—';
+  calcGrand();
+}
+
+function calcGrand() {
+  let grand = 0;
+  document.querySelectorAll('#groceryBody .total-cell').forEach(cell => {
+    const val = parseFloat(cell.textContent.replace('₹','')) || 0;
+    grand += val;
+  });
+  document.getElementById('grandTotal').textContent = '₹' + grand.toFixed(2);
+}
+
+// ── TAB SWITCH ──
+function switchTab(tabId, btn) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(tabId).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ── DAY ACCORDION ──
+function toggleDay(id, header) {
+  const body = document.getElementById(id);
+  const chev = document.getElementById('chev-' + id);
+  const open = body.classList.toggle('open');
+  chev.textContent = open ? '▲' : '▼';
+}
+
+// ── FILTER BY MONTH ──
+function filterByMonth(m) {
+  sessionStorage.setItem('activeTab', 'monthly');
+  window.location.href = "{% url 'purchase_list' %}?month=" + m;
+}
+
+// ── ADD NEW ITEM ──
+function addNewItem() {
+  const name = document.getElementById('newItemName').value.trim();
+  if (!name) return;
+  const form = document.createElement('form');
+  form.method = 'POST';
+  form.action = "{% url 'add_purchase_item' %}";
+  form.innerHTML = `<input name="csrfmiddlewaretoken" value="{{ csrf_token }}"><input name="name" value="${name}">`;
+  document.body.appendChild(form);
+  form.submit();
+}
+
+// ── PRINT MONTHLY ──
+function printMonthly() { window.print(); }
+
+// ── CALCULATE DAY TOTALS IN HISTORY ──
+function calcDayTotals() {
+  // Day wise tab
+  document.querySelectorAll('#day-history .day-card').forEach((card, i) => {
+    let total = 0;
+    card.querySelectorAll('.entry-total[data-val]').forEach(el => {
+      total += parseFloat(el.dataset.val) || 0;
+    });
+    const totalEl = document.getElementById('daytotal-' + (i + 1));
+    if (totalEl) totalEl.textContent = '₹' + total.toFixed(2);
+  });
+
+  // Monthly tab day cards
+  document.querySelectorAll('#monthly .day-card').forEach(card => {
+    let total = 0;
+    card.querySelectorAll('.entry-total-val[data-val]').forEach(el => {
+      total += parseFloat(el.dataset.val) || 0;
+    });
+    const sumEl = card.querySelector('.day-sum-cell');
+    if (sumEl) sumEl.textContent = '₹' + total.toFixed(2);
+  });
+
+  // Monthly tab summary stats
+  const entriesEl = document.getElementById('totalEntries');
+  const spentEl   = document.getElementById('totalSpent');
+  if (entriesEl && spentEl) {
+    let count = 0, spent = 0;
+    document.querySelectorAll('#monthly .entry-total-val[data-val]').forEach(el => {
+      spent += parseFloat(el.dataset.val) || 0;
+      count++;
+    });
+    entriesEl.textContent = count;
+    spentEl.textContent   = '₹' + spent.toFixed(2);
+  }
+}
+
+// ── RESTORE TAB ──
+window.addEventListener('load', () => {
+  calcDayTotals();
+
+  const active = sessionStorage.getItem('activeTab');
+  if (active) {
+    sessionStorage.removeItem('activeTab');
+    const btn = [...document.querySelectorAll('.tab-btn')].find(b =>
+      (active === 'monthly' && b.textContent.includes('Monthly')) ||
+      (active === 'day-history' && b.textContent.includes('Day'))
+    );
+    if (btn) switchTab(active, btn);
+  }
+
+  {% if filter_month %}
+  const btn = [...document.querySelectorAll('.tab-btn')].find(b => b.textContent.includes('Monthly'));
+  if (btn) switchTab('monthly', btn);
+  {% endif %}
+});
+</script>
+</body>
+</html>

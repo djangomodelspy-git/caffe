@@ -117,3 +117,83 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS('✅ Superuser created → username: admin  password: Sai'))
         else:
             self.stdout.write('   Superuser already exists, skipped.')
+
+from django.core.management.base import BaseCommand
+from caffe.models import Category, MenuItem, PurchaseItem
+
+
+MENU = {
+    'Coffee': [
+        ('Espresso', 60), ('Americano', 80), ('Cappuccino', 90),
+        ('Latte', 100), ('Mocha', 110), ('Cold Coffee', 120),
+        ('Filter Coffee', 50), ('Instant Coffee', 40),
+    ],
+    'Tea': [
+        ('Masala Chai', 30), ('Ginger Tea', 35), ('Green Tea', 60),
+        ('Lemon Tea', 50), ('Iced Tea', 70), ('Tulsi Tea', 45),
+    ],
+    'Snacks': [
+        ('Samosa', 20), ('Bread Butter', 30), ('Veg Sandwich', 60),
+        ('Cheese Sandwich', 80), ('Egg Sandwich', 70), ('Puff', 25),
+        ('Biscuits', 20), ('Banana Bread', 50),
+    ],
+    'Breakfast': [
+        ('Idli (2 pcs)', 40), ('Vada (2 pcs)', 40), ('Dosa', 60),
+        ('Upma', 50), ('Poha', 45), ('Paratha', 55), ('Omelette', 60),
+    ],
+    'Juices': [
+        ('Orange Juice', 80), ('Watermelon Juice', 60), ('Mango Juice', 90),
+        ('Mixed Fruit Juice', 100), ('Sugarcane Juice', 40),
+    ],
+    'Shakes': [
+        ('Mango Shake', 110), ('Strawberry Shake', 120), ('Chocolate Shake', 130),
+        ('Vanilla Shake', 110), ('Banana Shake', 100),
+    ],
+    'Meals': [
+        ('Veg Thali', 120), ('Egg Thali', 150), ('Chicken Thali', 180),
+        ('Rice + Dal', 80), ('Curd Rice', 70),
+    ],
+    'Beverages': [
+        ('Water Bottle', 20), ('Soda', 30), ('Lassi', 60),
+        ('Buttermilk', 30), ('Badam Milk', 80),
+    ],
+}
+
+PURCHASE_ITEMS = [
+    ('Sugar',          1),
+    ('Coffee Powder',  2),
+    ('Milk',           3),
+    ('Tea Powder',     4),
+    ('Oil',            5),
+]
+
+
+class Command(BaseCommand):
+    help = 'Seed menu items and purchase list for Narasimha Cafe'
+
+    def handle(self, *args, **kwargs):
+        # ── Menu ──
+        for cat_name, items in MENU.items():
+            cat, _ = Category.objects.get_or_create(name=cat_name)
+            for item_name, price in items:
+                MenuItem.objects.get_or_create(
+                    name=item_name,
+                    defaults={'price': price, 'category': cat, 'is_available': True},
+                )
+        self.stdout.write(self.style.SUCCESS('✅ Menu seeded'))
+
+        # ── Purchase Items ──
+        for name, order in PURCHASE_ITEMS:
+            PurchaseItem.objects.get_or_create(
+                name=name,
+                defaults={'sort_order': order},
+            )
+        self.stdout.write(self.style.SUCCESS('✅ Purchase items seeded'))
+
+        # ── Superuser ──
+        from django.contrib.auth.models import User
+        if not User.objects.filter(username='Sai').exists():
+            User.objects.create_superuser('Sai', '', 'cafe@2026')
+            self.stdout.write(self.style.SUCCESS('✅ Superuser created'))
+        else:
+            self.stdout.write('ℹ️  Superuser already exists')           
